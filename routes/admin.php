@@ -642,14 +642,6 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
         Route::get('customer/select-list', 'CustomerController@get_customers')->name('customer.select-list');
 
 
-        Route::group(['prefix' => 'customer', 'as' => 'customer.', 'middleware' => ['module:customer_management']], function () {
-            Route::get('list', 'CustomerController@customer_list')->name('list');
-            Route::get('view/{user_id}', 'CustomerController@view')->name('view');
-            Route::post('search', 'CustomerController@search')->name('search');
-            Route::get('status/{customer}/{status}', 'CustomerController@status')->name('status');
-        });
-
-
         Route::group(['prefix' => 'file-manager', 'as' => 'file-manager.'], function () {
             Route::get('/download/{file_name}/{storage?}', 'FileManagerController@download')->name('download');
             Route::get('/index/{folder_path?}//{storage?}', 'FileManagerController@index')->name('index');
@@ -715,6 +707,8 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::get('customer/select-list', 'CustomerController@get_customers')->name('customer.select-list');
 
             Route::group(['prefix' => 'customer', 'as' => 'customer.', 'middleware' => ['module:customer_management']], function () {
+                Route::get('add-new', 'CustomerController@create')->name('add-new');
+                Route::post('add-new', 'CustomerController@store');
                 Route::get('list', 'CustomerController@customer_list')->name('list');
                 Route::get('rental-view/{user_id}', 'CustomerController@rentalView')->name('rental.view');
                 Route::get('view/{user_id}', 'CustomerController@view')->name('view');

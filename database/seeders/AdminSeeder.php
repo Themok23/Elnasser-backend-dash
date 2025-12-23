@@ -15,17 +15,19 @@ class AdminSeeder extends Seeder
      */
     public function run()
     {
-        DB::table('admins')->insert([
+        DB::table('admins')->insertOrIgnore([
             'id' => 1,
             'f_name' => 'Master Admin',
             'l_name' => 'Khandakar',
             'phone' => '01759412381',
             'email' => 'admin@admin.com',
             'image' => 'def.png',
-            'password' => bcrypt(12345678),
-            'remember_token' =>Str::random(10),
-            'created_at'=>now(),
-            'updated_at'=>now()
+            'password' => bcrypt('12345678'),
+            'role_id' => 1,
+            'is_logged_in' => 0,
+            'remember_token' => Str::random(10),
+            'created_at' => now(),
+            'updated_at' => now()
         ]);
     }
 }

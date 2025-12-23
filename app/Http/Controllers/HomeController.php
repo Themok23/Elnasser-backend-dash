@@ -255,7 +255,7 @@ class HomeController extends Controller
             ]);
         } else if (strtolower(session('six_captcha')) != strtolower($request->custome_recaptcha)) {
             Toastr::error(translate('messages.ReCAPTCHA Failed'));
-            return back();
+            return back()->withInput($request->except(['_token', 'g-recaptcha-response']));
         }
 
         $contact = new Contact;

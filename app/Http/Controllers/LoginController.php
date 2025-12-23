@@ -89,6 +89,14 @@ class LoginController extends Controller
             $email = Crypt::decryptString(Cookie::get('e_token'));
             $password = Crypt::decryptString(Cookie::get('p_token'));
         }
+        
+        // Get old input values if login failed
+        if (old('email')) {
+            $email = old('email');
+        }
+        if (old('password')) {
+            $password = old('password');
+        }
 
         return view('auth.login', compact('custome_recaptcha', 'email', 'password', 'role', 'site_direction', 'locale'));
     }
@@ -147,7 +155,7 @@ class LoginController extends Controller
             ]);
         } else if (strtolower(session('six_captcha')) != strtolower($request->custome_recaptcha)) {
             Toastr::error(translate('messages.ReCAPTCHA Failed'));
-            return back();
+            return back()->withInput($request->only('email', 'password', 'remember'));
         }
 
         $ip = $request->ip();
@@ -162,7 +170,7 @@ class LoginController extends Controller
                 : $seconds . ' seconds';
 
             return redirect()->back()
-                ->withInput($request->only('email', 'remember'))
+                ->withInput($request->only('email', 'password', 'remember'))
                 ->withErrors(['Too many login attempts. Try again in ' . $time . '.']);
         }
 
@@ -171,7 +179,7 @@ class LoginController extends Controller
             $data = Admin::where('email', $request->email)->where('role_id', 1)->exists();
             if ($data) {
                 RateLimiter::hit($key, $decayMinutes * 60);
-                return redirect()->back()->withInput($request->only('email', 'remember'))
+                return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                     ->withErrors(['Email does not match.']);
             }
         }
@@ -179,7 +187,7 @@ class LoginController extends Controller
             $data = Admin::where('email', $request->email)->where('role_id', 1)->exists();
             if (!$data) {
                 RateLimiter::hit($key, $decayMinutes * 60);
-                return redirect()->back()->withInput($request->only('email', 'remember'))
+                return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                     ->withErrors(['Email does not match.']);
             }
         }
@@ -188,7 +196,7 @@ class LoginController extends Controller
             if ($vendor) {
                 if($vendor?->stores[0]?->module?->module_type == 'rental'){
                     if(!addon_published_status('Rental')){
-                        return redirect()->back()->withInput($request->only('email', 'remember'))
+                        return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                         ->withErrors([translate('messages.rental_module_is_not_available')]);
                     }
                 }
@@ -205,29 +213,29 @@ class LoginController extends Controller
                 }
 
                 if ($vendor?->stores[0]?->status == 0 && $vendor?->status == 0) {
-                    return redirect()->back()->withInput($request->only('email', 'remember'))
+                    return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                         ->withErrors([translate('messages.Admin_did_not_approve_your_registration_yet.')]);
                 }
             }else{
                 RateLimiter::hit($key, $decayMinutes * 60);
-                return redirect()->back()->withInput($request->only('email', 'remember'))
+                return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                 ->withErrors(['Email does not match.']);
             }
         } elseif ($request->role == 'vendor_employee') {
             $employee = VendorEmployee::where('email', $request->email)->first();
                 if($employee?->store?->module?->module_type == 'rental'){
                     if(!addon_published_status('Rental')){
-                        return redirect()->back()->withInput($request->only('email', 'remember'))
+                        return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                         ->withErrors([translate('messages.rental_module_is_not_available')]);
                     }
                 }
                 if ($employee && (in_array($employee?->store?->store_business_model, ['none', 'unsubscribed']) || $employee?->store?->status == 0)) {
-                    return redirect()->back()->withInput($request->only('email', 'remember'))
+                    return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                         ->withErrors([translate('messages.store_is_inactive')]);
                 }
                 if (!$employee) {
                     RateLimiter::hit($key, $decayMinutes * 60);
-                    return redirect()->back()->withInput($request->only('email', 'remember'))
+                    return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
                         ->withErrors(['Email does not match.']);
                 }
         }
@@ -268,7 +276,7 @@ class LoginController extends Controller
             return redirect()->route('vendor.dashboard')->withCookies($forgetCookies);
         }
         RateLimiter::hit($key, $decayMinutes * 60);
-        return redirect()->back()->withInput($request->only('email', 'remember'))
+        return redirect()->back()->withInput($request->only('email', 'password', 'remember'))
             ->withErrors(['Password does not match.']);
     }
 

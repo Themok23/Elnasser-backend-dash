@@ -137,13 +137,27 @@
                 </li>
                 <!-- Custommer -->
 
-                <li class="navbar-vertical-aside-has-menu {{ (Request::is('admin/users/customer/list') || Request::is('admin/users/customer/view*')) ? 'active' : '' }}">
-                    <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.users.customer.list') }}" title="{{ translate('messages.customers') }}">
+                <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/customer*') ? 'active' : '' }}">
+                    <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="{{ translate('messages.customers') }}">
                         <i class="tio-poi-user nav-icon"></i>
                         <span class="navbar-vertical-aside-mini-mode-hidden-elements text-truncate">
                             {{ translate('messages.customers') }}
                         </span>
                     </a>
+                    <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display:{{ Request::is('admin/users/customer*') ? 'block' : 'none' }}">
+                        <li class="nav-item {{ Request::is('admin/users/customer/add-new') ? 'active' : '' }}">
+                            <a class="nav-link " href="{{ route('admin.users.customer.add-new') }}" title="{{ translate('messages.add_new_customer') }}">
+                                <span class="tio-circle nav-indicator-icon"></span>
+                                <span class="text-truncate">{{ translate('messages.add_new') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item {{ Request::is('admin/users/customer/list') || Request::is('admin/users/customer/view*') ? 'active' : '' }}">
+                            <a class="nav-link " href="{{ route('admin.users.customer.list') }}" title="{{ translate('messages.customer_list') }}">
+                                <span class="tio-circle nav-indicator-icon"></span>
+                                <span class="text-truncate">{{ translate('messages.list') }}</span>
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/users/customer/wallet*') ? 'active' : '' }}">

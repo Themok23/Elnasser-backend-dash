@@ -16,6 +16,20 @@ use Illuminate\Support\Facades\Mail;
 use App\Models\SubscriptionBillingAndRefundHistory;
 use Brian2694\Toastr\Facades\Toastr;
 use Modules\Rental\Entities\Trips;
+use Illuminate\Support\Facades\Config;
+
+if (!function_exists('asset_fix')) {
+    /**
+     * Custom asset helper that handles 'public' prefix correctly
+     * Fixes issue where asset('public/assets/...') should resolve to /assets/...
+     */
+    function asset_fix($path)
+    {
+        // Remove 'public/' prefix if it exists at the start
+        $path = preg_replace('#^public/#', '', $path);
+        return asset($path);
+    }
+}
 
 if (! function_exists('translate')) {
     function translate($key, $replace = [])
@@ -306,6 +320,50 @@ if (!function_exists('config_settings')) {
                 }
                 return $data;
             }
+    }
+
+    if (! function_exists('back_with_input')) {
+        /**
+         * Redirect back with errors and keep form input
+         * Excludes sensitive fields like password by default
+         * 
+         * @param \Illuminate\Contracts\Validation\Validator|array|string $errors
+         * @param array|null $except Additional fields to exclude
+         * @return \Illuminate\Http\RedirectResponse
+         */
+        function back_with_input($errors, ?array $except = null)
+        {
+            $request = request();
+            $input = $request->all();
+            
+            // Default fields to exclude for security
+            $defaultExcept = ['password', 'password_confirmation', '_token', 'g-recaptcha-response'];
+            $exceptFields = $except ? array_merge($defaultExcept, $except) : $defaultExcept;
+            
+            // Remove excluded fields
+            foreach ($exceptFields as $field) {
+                unset($input[$field]);
+            }
+            
+            // Handle validator errors
+            if ($errors instanceof \Illuminate\Contracts\Validation\Validator) {
+                return redirect()->back()
+                    ->withErrors($errors)
+                    ->withInput($input);
+            }
+            
+            // Handle array of errors
+            if (is_array($errors)) {
+                return redirect()->back()
+                    ->withErrors($errors)
+                    ->withInput($input);
+            }
+            
+            // Handle string error message
+            return redirect()->back()
+                ->withErrors(['error' => $errors])
+                ->withInput($input);
+        }
     }
 
 

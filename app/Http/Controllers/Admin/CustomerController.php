@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\User;
 use App\Models\Order;
 use App\Models\Newsletter;
+use App\Models\Zone;
 use Illuminate\Http\Request;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Carbon;
@@ -16,6 +17,8 @@ use App\Http\Controllers\Controller;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SubscriberListExport;
 use Modules\Rental\Entities\Trips;
@@ -619,8 +622,70 @@ class CustomerController extends Controller
 
         if ($request->type == 'excel') {
             return Excel::download(new CustomerListExport($data), 'Customers.xlsx');
-        } else if ($request->type == 'csv') {
+        } else         if ($request->type == 'csv') {
             return Excel::download(new CustomerListExport($data), 'Customers.csv');
+        }
+    }
+
+    public function create()
+    {
+        $zones = Zone::where('status', 1)->get();
+        return view('admin-views.customer.create', compact('zones'));
+    }
+
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'f_name' => 'required|max:100',
+            'l_name' => 'nullable|max:100',
+            'email' => 'nullable|email|unique:users',
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10|unique:users',
+            'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
+            'zone_id' => 'nullable|exists:zones,id',
+            'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
+        ], [
+            'f_name.required' => translate('messages.first_name_is_required'),
+            'phone.required' => translate('messages.phone_is_required'),
+            'phone.unique' => translate('messages.phone_already_exists'),
+            'email.unique' => translate('messages.email_already_exists'),
+            'password.min_length' => translate('The password must be at least :min characters long'),
+            'password.mixed' => translate('The password must contain both uppercase and lowercase letters'),
+            'password.letters' => translate('The password must contain letters'),
+            'password.numbers' => translate('The password must contain numbers'),
+            'password.symbols' => translate('The password must contain symbols'),
+        ]);
+
+        if ($validator->fails()) {
+            return $this->backWithInput($validator);
+        }
+
+        try {
+            $user = new User();
+            $user->f_name = $request->f_name;
+            $user->l_name = $request->l_name ?? '';
+            $user->email = $request->email;
+            $user->phone = $request->phone;
+            $user->password = bcrypt($request->password);
+            $user->zone_id = $request->zone_id;
+            $user->status = 1;
+            $user->is_phone_verified = 1;
+            $user->login_medium = 'manual';
+
+            if ($request->hasFile('image')) {
+                $user->image = Helpers::upload('profile/', 'png', $request->file('image'));
+            } else {
+                $user->image = 'def.png';
+            }
+
+            $user->save();
+            $user->ref_code = Helpers::generate_referer_code($user);
+            $user->save();
+
+            Toastr::success(translate('messages.customer_added_successfully'));
+            return redirect()->route('admin.users.customer.list');
+        } catch (\Exception $e) {
+            Toastr::error(translate('messages.failed_to_create_customer'));
+            return $this->backWithInput($validator);
         }
     }
 }

@@ -81,8 +81,6 @@
                     {{ translate('messages.customer_list') }} <span class="badge badge-soft-dark ml-2" id="count">{{ $customers->total() }}</span>
                 </h3>
                 <div class="search--button-wrapper justify-content-end">
-
-
                     <form class="search-form">
                         <!-- Search -->
                         <div class="input-group input--group">
