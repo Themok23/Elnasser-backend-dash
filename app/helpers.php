@@ -326,7 +326,7 @@ if (!function_exists('config_settings')) {
         /**
          * Redirect back with errors and keep form input
          * Excludes sensitive fields like password by default
-         * 
+         *
          * @param \Illuminate\Contracts\Validation\Validator|array|string $errors
          * @param array|null $except Additional fields to exclude
          * @return \Illuminate\Http\RedirectResponse
@@ -335,30 +335,30 @@ if (!function_exists('config_settings')) {
         {
             $request = request();
             $input = $request->all();
-            
+
             // Default fields to exclude for security
             $defaultExcept = ['password', 'password_confirmation', '_token', 'g-recaptcha-response'];
             $exceptFields = $except ? array_merge($defaultExcept, $except) : $defaultExcept;
-            
+
             // Remove excluded fields
             foreach ($exceptFields as $field) {
                 unset($input[$field]);
             }
-            
+
             // Handle validator errors
             if ($errors instanceof \Illuminate\Contracts\Validation\Validator) {
                 return redirect()->back()
                     ->withErrors($errors)
                     ->withInput($input);
             }
-            
+
             // Handle array of errors
             if (is_array($errors)) {
                 return redirect()->back()
                     ->withErrors($errors)
                     ->withInput($input);
             }
-            
+
             // Handle string error message
             return redirect()->back()
                 ->withErrors(['error' => $errors])

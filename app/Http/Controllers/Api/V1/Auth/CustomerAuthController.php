@@ -418,6 +418,73 @@ class CustomerAuthController extends Controller
             'message' => translate('messages.failed')
         ], 404);
     }
+
+    /**
+     * Check phone number and return user status
+     * account_type: "new" - user doesn't exist (new user)
+     * account_type: "old" - user exists but incomplete (needs to complete registration)
+     * account_type: "exist" - user exists and complete (can login)
+     */
+    public function check_phone(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
+        ], [
+            'phone.required' => translate('messages.phone_is_required'),
+            'phone.regex' => translate('messages.phone_must_be_valid'),
+            'phone.min' => translate('messages.phone_must_be_at_least_10_characters'),
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        $user = User::where('phone', $request->phone)->first();
+
+        // User doesn't exist - new user
+        if (!$user) {
+            return response()->json([
+                'account_type' => 'new',
+                'message' => translate('messages.new_user_detected'),
+                'phone' => $request->phone,
+            ], 200);
+        }
+
+        // User exists - check if complete or incomplete
+        $isComplete = !empty($user->password) &&
+                     !empty($user->f_name) &&
+                     !empty($user->l_name) &&
+                     ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
+
+        if ($isComplete) {
+            // User is complete - they can login normally
+            return response()->json([
+                'account_type' => 'exist',
+                'message' => translate('messages.welcome_back'),
+                'user' => [
+                    'id' => $user->id,
+                    'name' => trim($user->f_name . ' ' . $user->l_name),
+                    'phone' => $user->phone,
+                    'email' => $user->email,
+                ],
+            ], 200);
+        }
+
+        // User exists but incomplete - welcome back, complete registration
+        return response()->json([
+            'account_type' => 'old',
+            'message' => translate('messages.welcome_back_complete_registration'),
+            'user' => [
+                'id' => $user->id,
+                'name' => trim(($user->f_name ?? '') . ' ' . ($user->l_name ?? '')),
+                'phone' => $user->phone,
+                'has_password' => !empty($user->password),
+                'has_email' => !empty($user->email),
+                'is_phone_verified' => $user->is_phone_verified == 1,
+                'is_email_verified' => $user->is_email_verified == 1,
+            ],
+        ], 200);
+    }
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -433,173 +500,200 @@ class CustomerAuthController extends Controller
         if ($validator->fails()) {
             return response()->json(['errors' => Helpers::error_processor($validator)], 403);
         }
-        $ref_by= null ;
-        $name = $request->name;
-        $nameParts = explode(' ', $name, 2);
-        $firstName = $nameParts[0];
-        $lastName = $nameParts[1] ?? '';
-        //Save point to refeer
-        if ($request->ref_code) {
-            $ref_status = BusinessSetting::where('key', 'ref_earning_status')->first()->value;
-            if ($ref_status != '1') {
-                return response()->json(['errors' => Helpers::error_formater('ref_code', translate('messages.referer_disable'))], 403);
-            }
 
-            $referar_user = User::where('ref_code', '=', $request->ref_code)->first();
-            if (!$referar_user || !$referar_user->status) {
-                return response()->json(['errors' => Helpers::error_formater('ref_code', translate('messages.referer_code_not_found'))], 405);
-            }
+        try {
+            return DB::transaction(function () use ($request) {
+                $ref_by = null;
+                $name = $request->name;
+                $nameParts = explode(' ', $name, 2);
+                $firstName = $nameParts[0];
+                $lastName = $nameParts[1] ?? '';
 
-            if (WalletTransaction::where('reference', $request->phone)->first()) {
-                return response()->json(['errors' => Helpers::error_formater('phone', translate('Referrer code already used'))], 203);
-            }
+                //Save point to refeer
+                if ($request->ref_code) {
+                    $ref_status = BusinessSetting::where('key', 'ref_earning_status')->first()->value;
+                    if ($ref_status != '1') {
+                        return response()->json(['errors' => Helpers::error_formater('ref_code', translate('messages.referer_disable'))], 403);
+                    }
 
+                    $referar_user = User::where('ref_code', '=', $request->ref_code)->first();
+                    if (!$referar_user || !$referar_user->status) {
+                        return response()->json(['errors' => Helpers::error_formater('ref_code', translate('messages.referer_code_not_found'))], 405);
+                    }
 
-            $notification_data = [
-                'title' => translate('messages.Your_referral_code_is_used_by') . ' ' . $firstName . ' ' . $lastName,
-                'description' => translate('Be prepare to receive when they complete there first purchase'),
-                'order_id' => 1,
-                'image' => '',
-                'type' => 'referral_code',
-            ];
+                    if (WalletTransaction::where('reference', $request->phone)->first()) {
+                        return response()->json(['errors' => Helpers::error_formater('phone', translate('Referrer code already used'))], 203);
+                    }
 
-            if (Helpers::getNotificationStatusData('customer', 'customer_new_referral_join', 'push_notification_status') && $referar_user?->cm_firebase_token) {
-                Helpers::send_push_notif_to_device($referar_user?->cm_firebase_token, $notification_data);
-                DB::table('user_notifications')->insert([
-                    'data' => json_encode($notification_data),
-                    'user_id' => $referar_user?->id,
-                    'created_at' => now(),
-                    'updated_at' => now()
-                ]);
-            }
+                    $notification_data = [
+                        'title' => translate('messages.Your_referral_code_is_used_by') . ' ' . $firstName . ' ' . $lastName,
+                        'description' => translate('Be prepare to receive when they complete there first purchase'),
+                        'order_id' => 1,
+                        'image' => '',
+                        'type' => 'referral_code',
+                    ];
 
+                    if (Helpers::getNotificationStatusData('customer', 'customer_new_referral_join', 'push_notification_status') && $referar_user?->cm_firebase_token) {
+                        Helpers::send_push_notif_to_device($referar_user?->cm_firebase_token, $notification_data);
+                        DB::table('user_notifications')->insert([
+                            'data' => json_encode($notification_data),
+                            'user_id' => $referar_user?->id,
+                            'created_at' => now(),
+                            'updated_at' => now()
+                        ]);
+                    }
 
-            $ref_by = $referar_user->id;
-        }
-
-        $user = User::create([
-            'f_name' => $firstName,
-            'l_name' => $lastName,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'ref_by' =>   $ref_by,
-            'password' => bcrypt($request->password)
-        ]);
-        $user->ref_code = Helpers::generate_referer_code($user);
-        $user->save();
-
-        $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
-
-        $login_settings = array_column(BusinessSetting::whereIn('key',['manual_login_status','otp_login_status','social_login_status','google_login_status','facebook_login_status','apple_login_status','email_verification_status','phone_verification_status'
-        ])->get(['key','value'])->toArray(), 'value', 'key');
-        $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()?->value??0;
-        $phone = 1;
-        $mail = 1;
-        if(isset($login_settings['phone_verification_status']) && $login_settings['phone_verification_status'] == 1){
-            $phone =0;
-            if(!$firebase_otp_verification){
-                $otp_interval_time= 60; //seconds
-                $verification_data= DB::table('phone_verifications')->where('phone', $request['phone'])->first();
-
-                if(isset($verification_data) &&  Carbon::parse($verification_data->updated_at)->DiffInSeconds() < $otp_interval_time){
-                    $time= $otp_interval_time - Carbon::parse($verification_data->updated_at)->DiffInSeconds();
-                    $errors = [];
-                    array_push($errors, ['code' => 'otp', 'message' =>  translate('messages.please_try_again_after_').$time.' '.translate('messages.seconds')]);
-                    return response()->json([
-                        'errors' => $errors
-                    ], 405);
+                    $ref_by = $referar_user->id;
                 }
 
-                $otp = rand(100000, 999999);
-                if(env('APP_MODE') == 'test'){
-                    $otp = '123456';
-                }
-                DB::table('phone_verifications')->updateOrInsert(['phone' => $request['phone']],
-                    [
-                        'token' => $otp,
-                        'otp_hit_count' => 0,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-
-
-                $published_status = 0;
-                $payment_published_status = config('get_payment_publish_status');
-                if (isset($payment_published_status[0]['is_published'])) {
-                    $published_status = $payment_published_status[0]['is_published'];
-                }
-
-                if($published_status == 1){
-                    $response = SmsGateway::send($request['phone'],$otp);
-                }else{
-                    $response = SMS_module::send($request['phone'],$otp);
-                }
-
-                $token = null;
-                if(env('APP_MODE') != 'test' && $response !== 'success') {
-                    $errors = [];
-                    array_push($errors, ['code' => 'otp', 'message' => translate('messages.failed_to_send_sms')]);
-                    return response()->json([
-                        'errors' => $errors
-                    ], 405);
-                }
-            }
-
-        }elseif (isset($login_settings['email_verification_status']) && $login_settings['email_verification_status'] == 1){
-            $mail =0;
-            $otp = rand(100000, 999999);
-            if(env('APP_MODE') == 'test'){
-                $otp = '123456';
-            }
-            DB::table('email_verifications')->updateOrInsert(['email' => $request['email']],
-                [
-                    'token' => $otp,
-                    'created_at' => now(),
-                    'updated_at' => now(),
+                // Create user within transaction
+                $user = User::create([
+                    'f_name' => $firstName,
+                    'l_name' => $lastName,
+                    'email' => $request->email,
+                    'phone' => $request->phone,
+                    'ref_by' => $ref_by,
+                    'password' => bcrypt($request->password)
                 ]);
 
-            try {
-                $mailResponse= null;
-                $mail_status = Helpers::get_mail_status('registration_otp_mail_status_user');
-
-                if( config('mail.status') && $mail_status == '1') {
-                    Mail::to($request['email'])->send(new EmailVerification($otp,$request->name));
-                    $mailResponse='success';
+                // Generate ref_code if not exists
+                if (empty($user->ref_code)) {
+                    $user->ref_code = Helpers::generate_referer_code();
+                    $user->save();
                 }
-            }catch(\Exception $ex){
-                info($ex->getMessage());
-                $mailResponse=null;
-            }
-            $token = null;
-            if(env('APP_MODE') != 'test' && $mailResponse !== 'success') {
-                $errors = [];
-                array_push($errors, ['code' => 'otp', 'message' => translate('messages.failed_to_send_mail')]);
+
+                // Refresh user to ensure relationships are loaded
+                $user->refresh();
+
+                // Generate token - if this fails, transaction will rollback
+                $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+
+                $login_settings = array_column(BusinessSetting::whereIn('key',['manual_login_status','otp_login_status','social_login_status','google_login_status','facebook_login_status','apple_login_status','email_verification_status','phone_verification_status'
+                ])->get(['key','value'])->toArray(), 'value', 'key');
+                $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()?->value??0;
+                $phone = 1;
+                $mail = 1;
+
+                if(isset($login_settings['phone_verification_status']) && $login_settings['phone_verification_status'] == 1){
+                    $phone =0;
+                    if(!$firebase_otp_verification){
+                        $otp_interval_time= 60; //seconds
+                        $verification_data= DB::table('phone_verifications')->where('phone', $request['phone'])->first();
+
+                        if(isset($verification_data) &&  Carbon::parse($verification_data->updated_at)->DiffInSeconds() < $otp_interval_time){
+                            $time= $otp_interval_time - Carbon::parse($verification_data->updated_at)->DiffInSeconds();
+                            // Throw exception to rollback transaction
+                            throw new \Exception('OTP interval not met: ' . $time);
+                        }
+
+                        $otp = rand(100000, 999999);
+                        if(env('APP_MODE') == 'test'){
+                            $otp = '123456';
+                        }
+                        DB::table('phone_verifications')->updateOrInsert(['phone' => $request['phone']],
+                            [
+                                'token' => $otp,
+                                'otp_hit_count' => 0,
+                                'created_at' => now(),
+                                'updated_at' => now(),
+                            ]);
+
+                        $published_status = 0;
+                        $payment_published_status = config('get_payment_publish_status');
+                        if (isset($payment_published_status[0]['is_published'])) {
+                            $published_status = $payment_published_status[0]['is_published'];
+                        }
+
+                        if($published_status == 1){
+                            $response = SmsGateway::send($request['phone'],$otp);
+                        }else{
+                            $response = SMS_module::send($request['phone'],$otp);
+                        }
+
+                        if(env('APP_MODE') != 'test' && $response !== 'success') {
+                            // Throw exception to rollback transaction - user will not be created
+                            throw new \Exception('Failed to send SMS');
+                        }
+                    }
+
+                }elseif (isset($login_settings['email_verification_status']) && $login_settings['email_verification_status'] == 1){
+                    $mail =0;
+                    $otp = rand(100000, 999999);
+                    if(env('APP_MODE') == 'test'){
+                        $otp = '123456';
+                    }
+                    DB::table('email_verifications')->updateOrInsert(['email' => $request['email']],
+                        [
+                            'token' => $otp,
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ]);
+
+                    try {
+                        $mailResponse= null;
+                        $mail_status = Helpers::get_mail_status('registration_otp_mail_status_user');
+
+                        if( config('mail.status') && $mail_status == '1') {
+                            Mail::to($request['email'])->send(new EmailVerification($otp,$request->name));
+                            $mailResponse='success';
+                        }
+                    }catch(\Exception $ex){
+                        info($ex->getMessage());
+                        $mailResponse=null;
+                    }
+
+                    if(env('APP_MODE') != 'test' && $mailResponse !== 'success') {
+                        // Throw exception to rollback transaction - user will not be created
+                        throw new \Exception('Failed to send email');
+                    }
+                }
+
+                // Send welcome email (non-critical, wrapped in try-catch)
+                try {
+                    $notification_status= Helpers::getNotificationStatusData('customer','customer_registration','mail_status');
+                    if($notification_status && config('mail.status') && $request->email && Helpers::get_mail_status('registration_mail_status_user') == '1') {
+                        Mail::to($request->email)->send(new \App\Mail\CustomerRegistration($request?->name));
+                    }
+                } catch(\Exception $ex) {
+                    info($ex->getMessage());
+                    // Don't throw - email failure shouldn't prevent registration
+                }
+
+                $user_email = null;
+                if($user->email){
+                    $user_email = $user->email;
+                }
+
+                // If we reach here, everything succeeded - transaction will commit
+                return response()->json(['token' => $token, 'is_phone_verified'=>$phone, 'is_email_verified'=>$mail, 'is_personal_info' => 1, 'is_exist_user' =>null, 'login_type' => 'manual', 'email' => $user_email], 200);
+            });
+        } catch (\Exception $e) {
+            // Transaction automatically rolled back - user was not created
+            // Return appropriate error based on exception message
+            if (str_contains($e->getMessage(), 'OTP interval')) {
+                $otp_interval_time = 60;
+                $verification_data = DB::table('phone_verifications')->where('phone', $request['phone'])->first();
+                if ($verification_data) {
+                    $time = $otp_interval_time - Carbon::parse($verification_data->updated_at)->DiffInSeconds();
+                    return response()->json([
+                        'errors' => [['code' => 'otp', 'message' => translate('messages.please_try_again_after_').$time.' '.translate('messages.seconds')]]
+                    ], 405);
+                }
+            } elseif (str_contains($e->getMessage(), 'Failed to send SMS')) {
                 return response()->json([
-                    'errors' => $errors
+                    'errors' => [['code' => 'otp', 'message' => translate('messages.failed_to_send_sms')]]
+                ], 405);
+            } elseif (str_contains($e->getMessage(), 'Failed to send email')) {
+                return response()->json([
+                    'errors' => [['code' => 'otp', 'message' => translate('messages.failed_to_send_mail')]]
                 ], 405);
             }
-        }
 
-
-        try
-        {
-            $notification_status= Helpers::getNotificationStatusData('customer','customer_registration','mail_status');
-            if($notification_status && config('mail.status') && $request->email && Helpers::get_mail_status('registration_mail_status_user') == '1') {
-                Mail::to($request->email)->send(new \App\Mail\CustomerRegistration($request?->name));
-            }
+            // Generic error - user was not created due to transaction rollback
+            return response()->json([
+                'errors' => [['code' => 'registration_failed', 'message' => translate('messages.registration_failed') . ': ' . $e->getMessage()]]
+            ], 500);
         }
-        catch(\Exception $ex)
-        {
-            info($ex->getMessage());
-        }
-
-        $user_email = null;
-        if($user->email){
-            $user_email = $user->email;
-        }
-
-        return response()->json(['token' => $token, 'is_phone_verified'=>$phone, 'is_email_verified'=>$mail, 'is_personal_info' => 1, 'is_exist_user' =>null, 'login_type' => 'manual', 'email' => $user_email], 200);
     }
 
     public function login(Request $request)
@@ -1107,6 +1201,123 @@ class CustomerAuthController extends Controller
             'name' => $exist_user->f_name.' '.$exist_user->l_name,
             'image' => $exist_user->image_full_url
         ];
+    }
+
+    /**
+     * Complete registration for existing incomplete users (account_type: "old")
+     * Updates missing fields like password, email, name, etc.
+     */
+    public function complete_registration(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'phone' => 'required|regex:/^([0-9\s\-\+\(\)]*)$/|min:10',
+            'name' => 'nullable|max:200',
+            'email' => 'nullable|email|unique:users,email',
+            'password' => ['nullable', Password::min(8)],
+        ], [
+            'phone.required' => translate('messages.phone_is_required'),
+            'phone.regex' => translate('messages.phone_must_be_valid'),
+            'phone.min' => translate('messages.phone_must_be_at_least_10_characters'),
+            'name.max' => translate('The name may not be greater than 200 characters.'),
+            'email.email' => translate('The email must be a valid email address.'),
+            'email.unique' => translate('messages.email_already_exists'),
+            'password.min' => translate('The password must be at least 8 characters.'),
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => Helpers::error_processor($validator)], 403);
+        }
+
+        // Find user by phone
+        $user = User::where('phone', $request->phone)->first();
+
+        if (!$user) {
+            return response()->json([
+                'errors' => [['code' => 'phone', 'message' => translate('messages.user_not_found')]]
+            ], 404);
+        }
+
+        // Check if user is already complete
+        $isComplete = !empty($user->password) &&
+                     !empty($user->f_name) &&
+                     !empty($user->l_name) &&
+                     ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
+
+        if ($isComplete) {
+            return response()->json([
+                'errors' => [['code' => 'user', 'message' => translate('messages.user_already_complete')]]
+            ], 403);
+        }
+
+        // Update missing fields
+        $updatedFields = [];
+
+        // Update name if provided and missing
+        if ($request->has('name') && $request->name) {
+            $nameParts = explode(' ', $request->name, 2);
+            if (empty($user->f_name)) {
+                $user->f_name = $nameParts[0];
+                $updatedFields[] = 'f_name';
+            }
+            if (empty($user->l_name) && isset($nameParts[1])) {
+                $user->l_name = $nameParts[1];
+                $updatedFields[] = 'l_name';
+            }
+        }
+
+        // Update email if provided and missing
+        if ($request->has('email') && $request->email && empty($user->email)) {
+            $user->email = $request->email;
+            $updatedFields[] = 'email';
+        }
+
+        // Update password if provided and missing
+        if ($request->has('password') && $request->password && empty($user->password)) {
+            $user->password = bcrypt($request->password);
+            $updatedFields[] = 'password';
+        }
+
+        // If no fields to update, return error
+        if (empty($updatedFields)) {
+            return response()->json([
+                'errors' => [['code' => 'data', 'message' => translate('messages.no_fields_to_update')]]
+            ], 403);
+        }
+
+        // Ensure ref_code exists
+        if (empty($user->ref_code)) {
+            $user->ref_code = Helpers::generate_referer_code();
+        }
+
+        $user->save();
+
+        // Check if user is now complete after update
+        $isNowComplete = !empty($user->password) &&
+                        !empty($user->f_name) &&
+                        !empty($user->l_name) &&
+                        ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
+
+        // Generate token if user is now complete
+        $token = null;
+        if ($isNowComplete && !empty($user->password)) {
+            // Login the user and generate token
+            if (auth()->loginUsingId($user->id)) {
+                $token = auth()->user()->createToken('RestaurantCustomerAuth')->accessToken;
+            }
+        }
+
+        return response()->json([
+            'message' => translate('messages.registration_completed_successfully'),
+            'user' => [
+                'id' => $user->id,
+                'name' => trim(($user->f_name ?? '') . ' ' . ($user->l_name ?? '')),
+                'phone' => $user->phone,
+                'email' => $user->email,
+            ],
+            'is_complete' => $isNowComplete,
+            'token' => $token,
+            'updated_fields' => $updatedFields,
+        ], 200);
     }
 
     public function update_info(Request $request)

@@ -11,11 +11,11 @@ use App\Traits\KeepsFormInput;
 class Controller extends BaseController
 {
     use AuthorizesRequests, DispatchesJobs, ValidatesRequests, KeepsFormInput;
-    
+
     /**
      * Redirect back with errors and keep form input
      * Excludes sensitive fields like password by default
-     * 
+     *
      * @param \Illuminate\Contracts\Validation\Validator|array|string $errors
      * @param array|null $except Additional fields to exclude
      * @return \Illuminate\Http\RedirectResponse

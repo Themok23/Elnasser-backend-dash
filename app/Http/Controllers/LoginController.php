@@ -29,7 +29,7 @@ use Modules\Gateways\Traits\SmsGateway;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
- 
+
 class LoginController extends Controller
 {
     public function __construct()
@@ -89,7 +89,7 @@ class LoginController extends Controller
             $email = Crypt::decryptString(Cookie::get('e_token'));
             $password = Crypt::decryptString(Cookie::get('p_token'));
         }
-        
+
         // Get old input values if login failed
         if (old('email')) {
             $email = old('email');

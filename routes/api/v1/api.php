@@ -34,6 +34,8 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
     Route::get('offline_payment_method_list', 'ConfigController@offline_payment_method_list');
     Route::group(['prefix' => 'auth', 'namespace' => 'Auth'], function () {
+        Route::post('check-phone', 'CustomerAuthController@check_phone');
+        Route::post('complete-registration', 'CustomerAuthController@complete_registration');
         Route::post('sign-up', 'CustomerAuthController@register');
         Route::post('login', 'CustomerAuthController@login');
         Route::post('external-login', 'CustomerAuthController@customerLoginFromDrivemond');

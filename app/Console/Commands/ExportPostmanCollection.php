@@ -28,7 +28,7 @@ class ExportPostmanCollection extends Command
     {
         $baseUrl = $this->option('base-url');
         $apiV1Only = $this->option('api-v1-only');
-        
+
         if ($apiV1Only) {
             $this->info('Generating Postman collection for API v1 only...');
         } else {
@@ -38,10 +38,10 @@ class ExportPostmanCollection extends Command
         $routes = Route::getRoutes();
         $collection = $this->generatePostmanCollection($routes, $baseUrl, $apiV1Only);
 
-        $outputPath = $apiV1Only 
+        $outputPath = $apiV1Only
             ? base_path('postman_collection_api_v1.json')
             : base_path('postman_collection.json');
-            
+
         file_put_contents($outputPath, json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
 
         $this->info("Postman collection exported successfully to: {$outputPath}");
@@ -58,8 +58,8 @@ class ExportPostmanCollection extends Command
         $collection = [
             'info' => [
                 'name' => $apiV1Only ? 'Elnasser Backend API V1' : 'Elnasser Backend API',
-                'description' => $apiV1Only 
-                    ? 'API v1 collection for Elnasser Backend' 
+                'description' => $apiV1Only
+                    ? 'API v1 collection for Elnasser Backend'
                     : 'Complete API collection for Elnasser Backend',
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
                 '_postman_id' => uniqid(),
@@ -85,13 +85,13 @@ class ExportPostmanCollection extends Command
         ];
 
         $groupedRoutes = $this->groupRoutes($routes, $apiV1Only);
-        
+
         foreach ($groupedRoutes as $groupName => $groupRoutes) {
             // Skip non-API v1 groups if api-v1-only is enabled
             if ($apiV1Only && $groupName !== 'API V1') {
                 continue;
             }
-            
+
             $folder = [
                 'name' => $groupName,
                 'item' => []
@@ -129,7 +129,7 @@ class ExportPostmanCollection extends Command
             $uri = $route->uri();
             $methods = $route->methods();
             $action = $route->getAction();
-            
+
             // Skip HEAD and OPTIONS methods
             $methods = array_filter($methods, function($method) {
                 return !in_array($method, ['HEAD', 'OPTIONS']);
@@ -188,19 +188,19 @@ class ExportPostmanCollection extends Command
 
         // Create a request for each HTTP method
         $requests = [];
-        
+
         foreach ($methods as $method) {
             // Parse URI to handle route parameters
             $pathParts = [];
             $queryParams = [];
             $pathString = $uri;
-            
+
             // Handle query parameters
             if (strpos($uri, '?') !== false) {
                 list($pathString, $queryString) = explode('?', $uri, 2);
                 parse_str($queryString, $queryParams);
             }
-            
+
             // Split path and handle route parameters
             $pathSegments = explode('/', $pathString);
             foreach ($pathSegments as $segment) {
@@ -225,7 +225,7 @@ class ExportPostmanCollection extends Command
                 ],
                 'response' => []
             ];
-            
+
             // Add query parameters if any
             if (!empty($queryParams)) {
                 $request['request']['url']['query'] = [];
@@ -315,20 +315,20 @@ class ExportPostmanCollection extends Command
     private function generateDescription($routeData, $action)
     {
         $description = [];
-        
+
         if (!empty($routeData['name'])) {
             $description[] = "**Route Name:** `{$routeData['name']}`";
         }
-        
+
         if ($action && is_string($action)) {
             $description[] = "**Controller:** `{$action}`";
         } elseif ($action) {
             $description[] = "**Controller:** Closure";
         }
-        
+
         if (!empty($routeData['middleware'])) {
-            $middleware = is_array($routeData['middleware']) 
-                ? implode(', ', $routeData['middleware']) 
+            $middleware = is_array($routeData['middleware'])
+                ? implode(', ', $routeData['middleware'])
                 : $routeData['middleware'];
             $description[] = "**Middleware:** `{$middleware}`";
         }
@@ -346,7 +346,7 @@ class ExportPostmanCollection extends Command
         }
 
         $authMiddleware = ['auth', 'auth:api', 'admin', 'vendor', 'dm.api', 'vendor.api'];
-        
+
         if (is_array($middleware)) {
             return !empty(array_intersect($authMiddleware, $middleware));
         }
@@ -360,7 +360,7 @@ class ExportPostmanCollection extends Command
     private function countEndpoints($collection)
     {
         $count = 0;
-        
+
         foreach ($collection['item'] as $folder) {
             foreach ($folder['item'] as $item) {
                 if (isset($item['item'])) {
@@ -372,7 +372,7 @@ class ExportPostmanCollection extends Command
                 }
             }
         }
-        
+
         return $count;
     }
 }
