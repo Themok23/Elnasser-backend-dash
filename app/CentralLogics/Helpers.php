@@ -2068,19 +2068,42 @@ class Helpers
 
     public static function upload(string $dir, string $format, $image = null)
     {
+        // #region agent log
+        $logData = ['dir' => $dir, 'format' => $format, 'has_image' => $image !== null, 'timestamp' => time()];
+        file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H5', 'location' => 'Helpers.php:upload:entry', 'message' => 'Upload function called', 'data' => $logData, 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+        // #endregion
         try {
             if ($image != null) {
+                $disk = self::getDisk();
+                // #region agent log
+                file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H5', 'location' => 'Helpers.php:upload:disk', 'message' => 'Disk determined', 'data' => ['disk' => $disk, 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+                // #endregion
                 $format = $image->getClientOriginalExtension();
                 $imageName = \Carbon\Carbon::now()->toDateString() . "-" . uniqid() . "." . $format;
-                if (!Storage::disk(self::getDisk())->exists($dir)) {
-                    Storage::disk(self::getDisk())->makeDirectory($dir);
+                $fullPath = $dir . $imageName;
+                if (!Storage::disk($disk)->exists($dir)) {
+                    Storage::disk($disk)->makeDirectory($dir);
+                    // #region agent log
+                    file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H5', 'location' => 'Helpers.php:upload:mkdir', 'message' => 'Directory created', 'data' => ['dir' => $dir, 'disk' => $disk, 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+                    // #endregion
                 }
-                Storage::disk(self::getDisk())->putFileAs($dir, $image, $imageName, ['visibility' => 'public']);
+                Storage::disk($disk)->putFileAs($dir, $image, $imageName, ['visibility' => 'public']);
+                // #region agent log
+                $storagePath = storage_path('app/public/' . $dir . $imageName);
+                $publicPath = public_path('storage/' . $dir . $imageName);
+                file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H5', 'location' => 'Helpers.php:upload:saved', 'message' => 'File saved', 'data' => ['imageName' => $imageName, 'fullPath' => $fullPath, 'storagePath' => $storagePath, 'storageExists' => file_exists($storagePath), 'publicPath' => $publicPath, 'publicExists' => file_exists($publicPath), 'disk' => $disk, 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+                // #endregion
             } else {
                 $imageName = 'def.png';
             }
         } catch (\Exception $e) {
+            // #region agent log
+            file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H5', 'location' => 'Helpers.php:upload:error', 'message' => 'Upload exception', 'data' => ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString(), 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+            // #endregion
         }
+        // #region agent log
+        file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H5', 'location' => 'Helpers.php:upload:exit', 'message' => 'Upload function returning', 'data' => ['imageName' => $imageName ?? null, 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+        // #endregion
         return $imageName;
     }
 
@@ -3162,6 +3185,9 @@ class Helpers
 
     public static function get_full_url($path, $data, $type, $placeholder = null)
     {
+        // #region agent log
+        file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H2', 'location' => 'Helpers.php:get_full_url:entry', 'message' => 'get_full_url called', 'data' => ['path' => $path, 'data' => $data, 'type' => $type, 'placeholder' => $placeholder, 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+        // #endregion
         $place_holders = [
             'default' => asset('public/assets/admin/img/100x100/2.jpg'),
             'business' => asset('public/assets/admin/img/160x160/img2.jpg'),
@@ -3214,7 +3240,41 @@ class Helpers
         }
 
         if ($data && Storage::disk('public')->exists($path . '/' . $data)) {
-            return asset('storage') . '/' . $path . '/' . $data;
+            // #region agent log
+            $checkPath = $path . '/' . $data;
+            $storagePath = storage_path('app/public/' . $checkPath);
+            $publicSymlink = public_path('storage');
+            $publicPath = public_path('storage/' . $checkPath);
+
+            // Generate URL using filesystem config (more reliable on different server setups)
+            // Get the base URL from config
+            $filesystemConfig = config('filesystems.disks.public');
+            $baseUrl = rtrim($filesystemConfig['url'] ?? asset('storage'), '/');
+            $generatedUrl = $baseUrl . '/' . $checkPath;
+
+            // Log both methods for debugging
+            $assetStorage = asset('storage');
+            $urlMethod1 = $assetStorage . '/' . $path . '/' . $data;
+            $urlMethod2 = $generatedUrl;
+
+            // Check if symlink exists and is accessible
+            $symlinkExists = is_link($publicSymlink) || (file_exists($publicSymlink) && is_link($publicSymlink));
+            $symlinkTarget = $symlinkExists ? (@readlink($publicSymlink) ?: 'readlink_failed') : null;
+            $basePath = base_path();
+            $publicPathValue = public_path();
+            $storagePathValue = storage_path('app/public');
+            $appUrl = config('app.url') ?? env('APP_URL');
+
+            file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H2,H3,H4', 'location' => 'Helpers.php:get_full_url:storage_check', 'message' => 'Storage disk check passed', 'data' => ['checkPath' => $checkPath, 'storagePath' => $storagePath, 'storageExists' => file_exists($storagePath), 'publicSymlink' => $publicSymlink, 'symlinkExists' => $symlinkExists, 'symlinkTarget' => $symlinkTarget, 'publicPath' => $publicPath, 'publicExists' => file_exists($publicPath), 'generatedUrl' => $generatedUrl, 'urlMethod1_asset' => $urlMethod1, 'urlMethod2_storage' => $urlMethod2, 'assetStorage' => $assetStorage, 'assetBase' => asset(''), 'basePath' => $basePath, 'publicPath' => $publicPathValue, 'storagePath' => $storagePathValue, 'APP_URL' => $appUrl, 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+            // #endregion
+
+            return $generatedUrl;
+        } else {
+            // #region agent log
+            $checkPath = $data ? ($path . '/' . $data) : 'no_data';
+            $storagePath = $data ? storage_path('app/public/' . $checkPath) : null;
+            file_put_contents('/Users/seafgamel/Elnasser-backend-dash/.cursor/debug.log', json_encode(['sessionId' => 'debug-session', 'runId' => 'run1', 'hypothesisId' => 'H3', 'location' => 'Helpers.php:get_full_url:storage_not_exists', 'message' => 'Storage disk check failed', 'data' => ['checkPath' => $checkPath, 'storagePath' => $storagePath, 'storageExists' => $storagePath && file_exists($storagePath), 'hasData' => !empty($data), 'timestamp' => time()], 'timestamp' => time() * 1000]) . "\n", FILE_APPEND);
+            // #endregion
         }
 
         if (request()->is('api/*')) {
