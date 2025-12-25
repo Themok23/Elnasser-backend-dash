@@ -54,9 +54,9 @@ class User extends Authenticatable
     protected $appends = ['image_full_url'];
     public function getImageFullUrlAttribute(){
         $value = $this->image;
-        if ($this->storage && count($this->storage) > 0) {
+        if ($this->storage && is_iterable($this->storage) && count($this->storage) > 0) {
             foreach ($this->storage as $storage) {
-                if ($storage['key'] == 'image') {
+                if (isset($storage['key']) && $storage['key'] == 'image') {
                     return Helpers::get_full_url('profile',$value,$storage['value']);
                 }
             }

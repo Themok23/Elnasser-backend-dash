@@ -22,3 +22,9 @@ docker-local/
 
 *.zip
 *.log
+
+# Ignore Helpers.php
+app/CentralLogics/Helpers.php
+
+# Ignore public folder
+/public

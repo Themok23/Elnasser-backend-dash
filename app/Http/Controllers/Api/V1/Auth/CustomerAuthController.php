@@ -1289,6 +1289,12 @@ class CustomerAuthController extends Controller
             $user->ref_code = Helpers::generate_referer_code();
         }
 
+        // Mark phone as verified since user is completing registration via phone
+        if ($user->is_phone_verified == 0) {
+            $user->is_phone_verified = 1;
+            $updatedFields[] = 'is_phone_verified';
+        }
+
         $user->save();
 
         // Check if user is now complete after update
