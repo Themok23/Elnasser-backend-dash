@@ -648,6 +648,16 @@ class CustomerAuthController extends Controller
                     }
                 }
 
+                // If verification is not required, mark as verified automatically
+                // This ensures check_phone returns "exist" instead of "old" for newly registered users
+                if (!isset($login_settings['phone_verification_status']) || $login_settings['phone_verification_status'] != 1) {
+                    $user->is_phone_verified = 1;
+                }
+                if (!isset($login_settings['email_verification_status']) || $login_settings['email_verification_status'] != 1) {
+                    $user->is_email_verified = 1;
+                }
+                $user->save();
+
                 // Send welcome email (non-critical, wrapped in try-catch)
                 try {
                     $notification_status= Helpers::getNotificationStatusData('customer','customer_registration','mail_status');
