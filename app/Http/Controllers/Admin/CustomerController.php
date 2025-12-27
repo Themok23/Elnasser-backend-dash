@@ -521,6 +521,17 @@ class CustomerController extends Controller
         Helpers::businessUpdateOrInsert(['key' => 'tier_gold_min_points'], [
             'value' => $request['tier_gold_min_points'] ?? 501
         ]);
+        
+        // Save tier point value multipliers
+        Helpers::businessUpdateOrInsert(['key' => 'tier_bronze_multiplier'], [
+            'value' => $request['tier_bronze_multiplier'] ?? '1.0'
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_silver_multiplier'], [
+            'value' => $request['tier_silver_multiplier'] ?? '1.2'
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_gold_multiplier'], [
+            'value' => $request['tier_gold_multiplier'] ?? '1.5'
+        ]);
 
         // Update all users' tiers based on new thresholds
         if ($request->has(['tier_bronze_max_points', 'tier_silver_min_points', 'tier_silver_max_points', 'tier_gold_min_points'])) {

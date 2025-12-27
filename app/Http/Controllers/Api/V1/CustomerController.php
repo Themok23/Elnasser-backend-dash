@@ -193,12 +193,95 @@ class CustomerController extends Controller
         $data['validity'] = (string)data_get($discount_data, 'validity');
 
         // Add tier information
-        $data['tier'] = $data->tier_level;
-        $data['tier_name'] = ucfirst($data->tier_level);
+        $tier = $data->tier_level;
+        $data['tier'] = $tier;
+        $data['tier_name'] = ucfirst($tier);
         $data['points_to_next_tier'] = self::calculatePointsToNextTier($data->loyalty_point ?? 0);
+
+        // Add tier-specific point value multiplier
+        $tierMultiplierKey = 'tier_' . $tier . '_multiplier';
+        $tierMultiplier = (float) BusinessSetting::where('key', $tierMultiplierKey)->first()->value ?? 1.0;
+        $data['tier_multiplier'] = $tierMultiplier;
+        $data['point_value_multiplier'] = $tierMultiplier; // Alias for clarity
+
+        // Calculate effective point value (if exchange rate is set)
+        $exchangeRate = (float) BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value ?? 0;
+        if ($exchangeRate > 0) {
+            $data['effective_point_value'] = (1 / $exchangeRate) * $tierMultiplier;
+        } else {
+            $data['effective_point_value'] = $tierMultiplier;
+        }
 
         unset($data['orders']);
         return response()->json($data, 200);
+    }
+
+    /**
+     * Get all tier details
+     * Returns information about all three tiers (Bronze, Silver, Gold)
+     */
+    public function get_tiers(Request $request)
+    {
+        // Get tier threshold settings
+        $bronzeMax = (int) (BusinessSetting::where('key', 'tier_bronze_max_points')->first()->value ?? 100);
+        $silverMin = (int) (BusinessSetting::where('key', 'tier_silver_min_points')->first()->value ?? 101);
+        $silverMax = (int) (BusinessSetting::where('key', 'tier_silver_max_points')->first()->value ?? 500);
+        $goldMin = (int) (BusinessSetting::where('key', 'tier_gold_min_points')->first()->value ?? 501);
+
+        // Get tier multipliers
+        $bronzeMultiplier = (float) (BusinessSetting::where('key', 'tier_bronze_multiplier')->first()->value ?? 1.0);
+        $silverMultiplier = (float) (BusinessSetting::where('key', 'tier_silver_multiplier')->first()->value ?? 1.2);
+        $goldMultiplier = (float) (BusinessSetting::where('key', 'tier_gold_multiplier')->first()->value ?? 1.5);
+
+        // Get base exchange rate
+        $exchangeRate = (float) (BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value ?? 0);
+
+        // Calculate effective point values
+        $calculateEffectiveValue = function($multiplier) use ($exchangeRate) {
+            if ($exchangeRate > 0) {
+                return (1 / $exchangeRate) * $multiplier;
+            }
+            return $multiplier;
+        };
+
+        $tiers = [
+            [
+                'tier' => 'bronze',
+                'tier_name' => 'Bronze',
+                'min_points' => 0,
+                'max_points' => $bronzeMax,
+                'points_range' => "0 - {$bronzeMax}",
+                'multiplier' => $bronzeMultiplier,
+                'effective_point_value' => $calculateEffectiveValue($bronzeMultiplier),
+                'description' => "Points from 0 to {$bronzeMax}",
+            ],
+            [
+                'tier' => 'silver',
+                'tier_name' => 'Silver',
+                'min_points' => $silverMin,
+                'max_points' => $silverMax,
+                'points_range' => "{$silverMin} - {$silverMax}",
+                'multiplier' => $silverMultiplier,
+                'effective_point_value' => $calculateEffectiveValue($silverMultiplier),
+                'description' => "Points from {$silverMin} to {$silverMax}",
+            ],
+            [
+                'tier' => 'gold',
+                'tier_name' => 'Gold',
+                'min_points' => $goldMin,
+                'max_points' => null, // No upper limit
+                'points_range' => "{$goldMin}+",
+                'multiplier' => $goldMultiplier,
+                'effective_point_value' => $calculateEffectiveValue($goldMultiplier),
+                'description' => "Points from {$goldMin} and above",
+            ],
+        ];
+
+        return response()->json([
+            'tiers' => $tiers,
+            'exchange_rate' => $exchangeRate,
+            'currency_code' => Helpers::currency_code(),
+        ], 200);
     }
 
     /**

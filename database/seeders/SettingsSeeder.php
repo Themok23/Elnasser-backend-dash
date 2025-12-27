@@ -113,6 +113,10 @@ class SettingsSeeder extends Seeder
             ['key' => 'tier_silver_min_points', 'value' => '101'],
             ['key' => 'tier_silver_max_points', 'value' => '500'],
             ['key' => 'tier_gold_min_points', 'value' => '501'],
+            // Tier point value multipliers
+            ['key' => 'tier_bronze_multiplier', 'value' => '1.0'],
+            ['key' => 'tier_silver_multiplier', 'value' => '1.2'],
+            ['key' => 'tier_gold_multiplier', 'value' => '1.5'],
         ];
 
         foreach ($tierSettings as $setting) {

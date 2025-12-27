@@ -318,6 +318,9 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
     });
 
+    // Tier information endpoint (public)
+    Route::get('tiers', 'CustomerController@get_tiers');
+
     Route::group(['prefix' => 'testimonial'], function () {
         Route::get('/', 'TestimonialController@get_tetimonial_lists');
 

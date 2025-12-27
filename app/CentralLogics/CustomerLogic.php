@@ -38,12 +38,19 @@ class CustomerLogic
 
                 $check_loyalty_point_exchange_rate = (int) BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value;
 
-                if($check_loyalty_point_exchange_rate == 0){
+                // Get tier-specific multiplier
+                $tier = $user->tier ?? 'bronze';
+                $tierMultiplierKey = 'tier_' . $tier . '_multiplier';
+                $tierMultiplier = (float) BusinessSetting::where('key', $tierMultiplierKey)->first()->value ?? 1.0;
 
-                    $credit = (int)($amount / 1);
+                if($check_loyalty_point_exchange_rate == 0){
+                    // Apply tier multiplier directly
+                    $credit = (float)($amount * $tierMultiplier);
                 }
                 else{
-                    $credit = (int)($amount / BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value);
+                    // Apply base exchange rate, then multiply by tier multiplier
+                    $baseCredit = (float)($amount / BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value);
+                    $credit = $baseCredit * $tierMultiplier;
                 }
             }
         } else if (in_array($transaction_type, ['order_place','trip_booking'])) {

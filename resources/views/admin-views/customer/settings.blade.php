@@ -227,6 +227,47 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Tier Point Value Multipliers -->
+                            <div class="row g-3 mt-3">
+                                <div class="col-12">
+                                    <h6 class="mb-3">{{ translate('messages.Tier Point Value Multipliers') }}</h6>
+                                    <small class="text-muted">{{ translate('messages.tier_multiplier_hint') }}</small>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_bronze_multiplier">
+                                            {{ translate('messages.Bronze Tier Multiplier') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_bronze_multiplier" min="0" step="0.01"
+                                            value="{{ $data['tier_bronze_multiplier'] ?? '1.0' }}" required>
+                                        <small class="text-muted">{{ translate('messages.e.g., 1.0 means 1 point = 1 currency unit') }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_silver_multiplier">
+                                            {{ translate('messages.Silver Tier Multiplier') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_silver_multiplier" min="0" step="0.01"
+                                            value="{{ $data['tier_silver_multiplier'] ?? '1.2' }}" required>
+                                        <small class="text-muted">{{ translate('messages.e.g., 1.2 means 1 point = 1.2 currency units') }}</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_gold_multiplier">
+                                            {{ translate('messages.Gold Tier Multiplier') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_gold_multiplier" min="0" step="0.01"
+                                            value="{{ $data['tier_gold_multiplier'] ?? '1.5' }}" required>
+                                        <small class="text-muted">{{ translate('messages.e.g., 1.5 means 1 point = 1.5 currency units') }}</small>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
