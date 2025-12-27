@@ -22,6 +22,8 @@ docker-local/
 
 *.zip
 *.log
+*.md
+*.pdf
 
 # Ignore Helpers.php
 app/CentralLogics/Helpers.php
