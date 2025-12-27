@@ -450,6 +450,23 @@ class CustomerAuthController extends Controller
             ], 200);
         }
 
+        // Auto-verify phone/email if user has password, name, and email/phone
+        // This handles cases where users have complete data but verification flags weren't set
+        $needsAutoVerify = false;
+        if (!empty($user->password) && !empty($user->f_name) && !empty($user->l_name)) {
+            if (!empty($user->email) && $user->is_email_verified == 0) {
+                $user->is_email_verified = 1;
+                $needsAutoVerify = true;
+            }
+            if ($user->is_phone_verified == 0) {
+                $user->is_phone_verified = 1;
+                $needsAutoVerify = true;
+            }
+            if ($needsAutoVerify) {
+                $user->save();
+            }
+        }
+
         // User exists - check if complete or incomplete
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
@@ -478,6 +495,7 @@ class CustomerAuthController extends Controller
                 'id' => $user->id,
                 'name' => trim(($user->f_name ?? '') . ' ' . ($user->l_name ?? '')),
                 'phone' => $user->phone,
+                'email' => $user->email ?? null,
                 'has_password' => !empty($user->password),
                 'has_email' => !empty($user->email),
                 'is_phone_verified' => $user->is_phone_verified == 1,
