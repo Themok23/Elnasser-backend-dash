@@ -442,6 +442,7 @@ class CustomerController extends Controller
         $data = BusinessSetting::where('key','like','wallet_%')
             ->orWhere('key','like','loyalty_%')
             ->orWhere('key','like','ref_earning_%')
+            ->orWhere('key','like','tier_%')
             ->orWhere('key','like','ref_earning_%')->get();
         $data = array_column($data->toArray(), 'value','key');
         // dd($data);
@@ -506,6 +507,28 @@ class CustomerController extends Controller
         Helpers::businessUpdateOrInsert(['key' => 'new_customer_discount_validity_type'], [
             'value' => $request['new_customer_discount_validity_type']??'day'
         ]);
+
+        // Save tier threshold settings
+        Helpers::businessUpdateOrInsert(['key' => 'tier_bronze_max_points'], [
+            'value' => $request['tier_bronze_max_points'] ?? 100
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_silver_min_points'], [
+            'value' => $request['tier_silver_min_points'] ?? 101
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_silver_max_points'], [
+            'value' => $request['tier_silver_max_points'] ?? 500
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_gold_min_points'], [
+            'value' => $request['tier_gold_min_points'] ?? 501
+        ]);
+
+        // Update all users' tiers based on new thresholds
+        if ($request->has(['tier_bronze_max_points', 'tier_silver_min_points', 'tier_silver_max_points', 'tier_gold_min_points'])) {
+            $users = User::all();
+            foreach ($users as $user) {
+                $user->updateTier();
+            }
+        }
 
         Toastr::success(translate('messages.customer_settings_updated_successfully'));
         return back();

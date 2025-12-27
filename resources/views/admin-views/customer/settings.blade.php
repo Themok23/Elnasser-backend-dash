@@ -167,6 +167,69 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Tier Settings Section - Always Visible -->
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">
+                                <span class="card-header-icon">
+                                    <i class="tio-settings-outlined"></i>
+                                </span>
+                                <span>
+                                    {{ translate('messages.customer_tier_settings') }}
+                                </span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_bronze_max_points">
+                                            {{ translate('messages.Bronze Max Points') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_bronze_max_points" min="0"
+                                            value="{{ $data['tier_bronze_max_points'] ?? '100' }}" required>
+                                        <small class="text-muted">0 - {{ $data['tier_bronze_max_points'] ?? '100' }} points</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_silver_min_points">
+                                            {{ translate('messages.Silver Min Points') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_silver_min_points" min="0"
+                                            value="{{ $data['tier_silver_min_points'] ?? '101' }}" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_silver_max_points">
+                                            {{ translate('messages.Silver Max Points') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_silver_max_points" min="0"
+                                            value="{{ $data['tier_silver_max_points'] ?? '500' }}" required>
+                                        <small class="text-muted">{{ $data['tier_silver_min_points'] ?? '101' }} - {{ $data['tier_silver_max_points'] ?? '500' }} points</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_gold_min_points">
+                                            {{ translate('messages.Gold Min Points') }}
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="number" class="form-control" name="tier_gold_min_points" min="0"
+                                            value="{{ $data['tier_gold_min_points'] ?? '501' }}" required>
+                                        <small class="text-muted">{{ $data['tier_gold_min_points'] ?? '501' }}+ points</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="col-lg-12 referrer-earning">
                     <div class="card">
                         <div class="card-header">

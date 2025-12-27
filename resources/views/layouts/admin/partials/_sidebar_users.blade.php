@@ -157,6 +157,12 @@
                                 <span class="text-truncate">{{ translate('messages.list') }}</span>
                             </a>
                         </li>
+                        <li class="nav-item {{ Request::is('admin/users/customer/settings') ? 'active' : '' }}">
+                            <a class="nav-link " href="{{ route('admin.users.customer.settings') }}" title="{{ translate('messages.points_setting_tiers') }}">
+                                <span class="tio-circle nav-indicator-icon"></span>
+                                <span class="text-truncate">{{ translate('messages.points_setting_tiers') }}</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\CentralLogics\Helpers;
+use App\Models\BusinessSetting;
 use App\Scopes\StoreScope;
 use App\Scopes\ZoneScope;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -50,8 +51,9 @@ class User extends Authenticatable
         'wallet_balance' => 'float',
         'loyalty_point' => 'integer',
         'ref_by' => 'integer',
+        'tier' => 'string',
     ];
-    protected $appends = ['image_full_url'];
+    protected $appends = ['image_full_url', 'tier_level'];
     public function getImageFullUrlAttribute(){
         $value = $this->image;
         if ($this->storage && is_iterable($this->storage) && count($this->storage) > 0) {
@@ -68,6 +70,41 @@ class User extends Authenticatable
     public function getFullNameAttribute(): string
     {
         return $this->f_name . ' ' . $this->l_name;
+    }
+
+    /**
+     * Calculate tier level based on loyalty points
+     */
+    public function getTierLevelAttribute()
+    {
+        $points = $this->loyalty_point ?? 0;
+
+        // Get tier thresholds from business settings
+        $bronzeMax = (int) (BusinessSetting::where('key', 'tier_bronze_max_points')->first()->value ?? 100);
+        $silverMin = (int) (BusinessSetting::where('key', 'tier_silver_min_points')->first()->value ?? 101);
+        $silverMax = (int) (BusinessSetting::where('key', 'tier_silver_max_points')->first()->value ?? 500);
+        $goldMin = (int) (BusinessSetting::where('key', 'tier_gold_min_points')->first()->value ?? 501);
+
+        if ($points >= $goldMin) {
+            return 'gold';
+        } elseif ($points >= $silverMin && $points <= $silverMax) {
+            return 'silver';
+        } else {
+            return 'bronze';
+        }
+    }
+
+    /**
+     * Update tier when points change
+     */
+    public function updateTier()
+    {
+        $newTier = $this->tier_level;
+        if ($this->tier !== $newTier) {
+            $this->tier = $newTier;
+            // Use updateQuietly to avoid triggering model events
+            $this->updateQuietly(['tier' => $newTier]);
+        }
     }
 
     public function scopeOfStatus($query, $status): void

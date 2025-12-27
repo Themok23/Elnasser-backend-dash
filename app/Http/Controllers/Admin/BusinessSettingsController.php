@@ -63,6 +63,7 @@ class BusinessSettingsController extends Controller
                 ->orWhere('key', 'like', 'add_fund_status%')
                 ->orWhere('key', 'like', 'customer_%')
                 ->orWhere('key', 'like', 'new_customer_discount_%')
+                ->orWhere('key', 'like', 'tier_%')
                 ->orWhere('key', 'like', 'ref_earning_%')->get();
             $data = array_column($data->toArray(), 'value', 'key');
 

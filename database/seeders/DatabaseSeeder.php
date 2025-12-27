@@ -13,9 +13,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run()
     {
-        // \App\Models\User::factory(10)->create();
+        // Seed in order of dependency
         $this->call([
-            UserSeeder::class
+            SettingsSeeder::class,      // Settings first (login URLs, tier thresholds, etc.)
+            AdminSeeder::class,         // Admin user
+            UserSeeder::class,          // Basic users (existing)
+            CustomerSeeder::class,      // Complete customers with wallet/points
+            OrderSeeder::class,         // Orders with order details
+            PointsSeeder::class,       // Loyalty points, wallet, and order transactions
         ]);
     }
 }

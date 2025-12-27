@@ -90,7 +90,7 @@ class OrderController extends Controller
         }
         $user_id = $request->user ? $request->user->id : $request['guest_id'];
 
-        $paginator = Order::with(['store', 'delivery_man.rating', 'parcel_category', 'refund:order_id,admin_note,customer_note'])->withCount('details')->where(['user_id' => $user_id])
+        $paginator = Order::with(['store:id,name,logo', 'refund:order_id,admin_note,customer_note'])->withCount('details')->where(['user_id' => $user_id])
         ->whereIn('order_status', ['delivered', 'canceled', 'refund_requested', 'refund_request_canceled', 'refunded', 'failed','returned'])
             ->when(isset($request->user), function ($query) {
                 $query->where('is_guest', 0);
@@ -98,12 +98,19 @@ class OrderController extends Controller
 
             ->Notpos()->latest()->paginate($request['limit'], ['*'], 'page', $request['offset']);
         $orders = array_map(function ($data) {
-            $data['delivery_address'] = $data['delivery_address'] ? json_decode($data['delivery_address']) : $data['delivery_address'];
-            $data['store'] = $data['store'] ? Helpers::store_data_formatting($data['store']) : $data['store'];
-            $data['delivery_man'] = $data['delivery_man'] ? Helpers::deliverymen_data_formatting([$data['delivery_man']]) : $data['delivery_man'];
-            $data['refund_cancellation_note'] = $data['refund'] ? $data['refund']['admin_note'] : null;
-            $data['refund_customer_note'] = $data['refund'] ? $data['refund']['customer_note'] : null;
-            return $data;
+            return [
+                'id' => $data->id,
+                'order_amount' => round($data->order_amount, 2),
+                'order_status' => $data->order_status,
+                'payment_status' => $data->payment_status,
+                'payment_method' => $data->payment_method,
+                'order_type' => $data->order_type,
+                'store_name' => $data->store ? $data->store->name : null,
+                'store_logo' => $data->store && $data->store->logo ? Helpers::get_full_url('store', $data->store->logo, 'public') : null,
+                'items_count' => $data->details_count ?? 0,
+                'created_at' => $data->created_at,
+                'delivery_date' => $data->created_at ? date('Y-m-d', strtotime($data->created_at)) : null,
+            ];
         }, $paginator->items());
         $data = [
             'total_size' => $paginator->total(),
@@ -127,7 +134,7 @@ class OrderController extends Controller
         }
         $user_id = $request->user ? $request->user->id : $request['guest_id'];
 
-        $paginator = Order::with(['store', 'delivery_man.rating', 'parcel_category'])
+        $paginator = Order::with(['store:id,name,logo'])
             ->when(isset($request->user), function ($query) {
                 $query->where('is_guest', 0);
             })
@@ -136,10 +143,19 @@ class OrderController extends Controller
             ->Notpos()->latest()->paginate($request['limit'], ['*'], 'page', $request['offset']);
 
         $orders = array_map(function ($data) {
-            $data['delivery_address'] = $data['delivery_address'] ? json_decode($data['delivery_address']) : $data['delivery_address'];
-            $data['store'] = $data['store'] ? Helpers::store_data_formatting($data['store']) : $data['store'];
-            $data['delivery_man'] = $data['delivery_man'] ? Helpers::deliverymen_data_formatting([$data['delivery_man']]) : $data['delivery_man'];
-            return $data;
+            return [
+                'id' => $data->id,
+                'order_amount' => round($data->order_amount, 2),
+                'order_status' => $data->order_status,
+                'payment_status' => $data->payment_status,
+                'payment_method' => $data->payment_method,
+                'order_type' => $data->order_type,
+                'store_name' => $data->store ? $data->store->name : null,
+                'store_logo' => $data->store && $data->store->logo ? Helpers::get_full_url('store', $data->store->logo, 'public') : null,
+                'items_count' => $data->details_count ?? 0,
+                'created_at' => $data->created_at,
+                'delivery_date' => $data->created_at ? date('Y-m-d', strtotime($data->created_at)) : null,
+            ];
         }, $paginator->items());
         $data = [
             'total_size' => $paginator->total(),
@@ -161,7 +177,7 @@ class OrderController extends Controller
         }
         $user_id = $request?->user?->id;
 
-        $order = Order::with('details', 'offline_payments', 'parcel_category','parcelCancellation')
+        $order = Order::with(['details.item:id,name,image', 'store:id,name,logo,phone,address'])
             ->when(isset($request->user), function ($query) {
                 $query->where('is_guest', 0);
             })
@@ -169,24 +185,55 @@ class OrderController extends Controller
                 return $query->where('user_id', $user_id);
             })->findOrFail($request->order_id);
 
-        $details = isset($order->details) ? $order->details : null;
-        if ($details != null && $details->count() > 0) {
-            $details = Helpers::order_details_data_formatting($details);
-            $details[0]['is_guest'] = (int)$order->is_guest;
-            return response()->json($details, 200);
-        } else if ($order->order_type == 'parcel' || $order->prescription_order == 1) {
-            $order->delivery_address = json_decode($order->delivery_address, true);
-            if ($order->prescription_order && $order->order_attachment) {
-                $order->order_attachment = json_decode($order->order_attachment, true);
+        // Simplified order details response
+        $deliveryAddress = $order->delivery_address ? json_decode($order->delivery_address, true) : null;
+
+        $items = [];
+        if ($order->details && $order->details->count() > 0) {
+            foreach ($order->details as $detail) {
+                $items[] = [
+                    'id' => $detail->id,
+                    'item_id' => $detail->item_id,
+                    'item_name' => $detail->item ? $detail->item->name : 'N/A',
+                    'item_image' => $detail->item && $detail->item->image ? Helpers::get_full_url('product', $detail->item->image, 'public') : null,
+                    'quantity' => $detail->quantity,
+                    'price' => round($detail->price, 2),
+                    'discount' => round($detail->discount_on_item ?? 0, 2),
+                    'total' => round(($detail->price * $detail->quantity) - ($detail->discount_on_item ?? 0), 2),
+                ];
             }
-            return response()->json(($order), 200);
         }
 
-        return response()->json([
-            'errors' => [
-                ['code' => 'order', 'message' => translate('messages.not_found')]
-            ]
-        ], 404);
+        $response = [
+            'id' => $order->id,
+            'order_amount' => round($order->order_amount, 2),
+            'order_status' => $order->order_status,
+            'payment_status' => $order->payment_status,
+            'payment_method' => $order->payment_method,
+            'order_type' => $order->order_type,
+            'store' => $order->store ? [
+                'id' => $order->store->id,
+                'name' => $order->store->name,
+                'logo' => $order->store->logo ? Helpers::get_full_url('store', $order->store->logo, 'public') : null,
+                'phone' => $order->store->phone,
+                'address' => $order->store->address,
+            ] : null,
+            'delivery_charge' => round($order->delivery_charge ?? 0, 2),
+            'tax_amount' => round($order->total_tax_amount ?? 0, 2),
+            'discount_amount' => round(($order->coupon_discount_amount ?? 0) + ($order->store_discount_amount ?? 0), 2),
+            'items' => $items,
+            'items_count' => count($items),
+            'delivery_address' => $deliveryAddress ? [
+                'contact_person_name' => $deliveryAddress['contact_person_name'] ?? null,
+                'contact_person_number' => $deliveryAddress['contact_person_number'] ?? null,
+                'address' => $deliveryAddress['address'] ?? null,
+                'address_type' => $deliveryAddress['address_type'] ?? null,
+            ] : null,
+            'created_at' => $order->created_at,
+            'updated_at' => $order->updated_at,
+        ];
+
+        return response()->json($response, 200);
     }
 
     public function cancel_order(Request $request)

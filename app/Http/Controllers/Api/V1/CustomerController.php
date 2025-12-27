@@ -175,17 +175,8 @@ class CustomerController extends Controller
 
     public function info(Request $request)
     {
-        if (!$request->hasHeader('X-localization')) {
-
-            $errors = [];
-            array_push($errors, ['code' => 'current_language_key', 'message' => translate('messages.current_language_key_required')]);
-            return response()->json([
-                'errors' => $errors
-            ], 200);
-        }
-
-        // Current Language
-        $current_language = $request->header('X-localization');
+        // Current Language - default to 'en' if not provided
+        $current_language = $request->header('X-localization', 'en');
         $user = User::findOrFail($request->user()->id);
         $user->current_language_key = $current_language;
         $user->save();
@@ -201,10 +192,31 @@ class CustomerController extends Controller
         $data['discount_amount_type'] = data_get($discount_data, 'discount_amount_type');
         $data['validity'] = (string)data_get($discount_data, 'validity');
 
+        // Add tier information
+        $data['tier'] = $data->tier_level;
+        $data['tier_name'] = ucfirst($data->tier_level);
+        $data['points_to_next_tier'] = self::calculatePointsToNextTier($data->loyalty_point ?? 0);
+
         unset($data['orders']);
         return response()->json($data, 200);
     }
 
+    /**
+     * Calculate points needed to reach next tier
+     */
+    private static function calculatePointsToNextTier($currentPoints)
+    {
+        $silverMin = (int) (BusinessSetting::where('key', 'tier_silver_min_points')->first()->value ?? 101);
+        $goldMin = (int) (BusinessSetting::where('key', 'tier_gold_min_points')->first()->value ?? 501);
+
+        if ($currentPoints < $silverMin) {
+            return max(0, $silverMin - $currentPoints); // Points needed for Silver
+        } elseif ($currentPoints < $goldMin) {
+            return max(0, $goldMin - $currentPoints); // Points needed for Gold
+        } else {
+            return 0; // Already at highest tier
+        }
+    }
 
     public function update_interest(Request $request)
     {

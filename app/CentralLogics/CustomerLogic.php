@@ -113,6 +113,8 @@ class CustomerLogic
         try {
             DB::beginTransaction();
             $user->save();
+            // Update tier based on new points
+            $user->updateTier();
             $loyalty_point_transaction->save();
             DB::commit();
             return $credit ?? true;
