@@ -76,4 +76,48 @@ class ExternalConfigurationController extends Controller
         return back();
     }
 
+    public function updateDynamics365Configuration(Request $request)
+    {
+        if (env('APP_MODE') == 'demo') {
+            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
+            return back();
+        }
+
+        if (auth('admin')->user()->role_id != 1) {
+            Toastr::warning(translate('messages.access_denied'));
+            return back();
+        }
+
+        // Enable/disable Dynamics 365 integration
+        if (array_key_exists('dynamics365_enabled', $request->all())) {
+            DB::table('external_configurations')->updateOrInsert(['key' => 'dynamics365_enabled'], [
+                'value' => 1
+            ]);
+        } else {
+            DB::table('external_configurations')->updateOrInsert(['key' => 'dynamics365_enabled'], [
+                'value' => 0
+            ]);
+        }
+
+        // Update configuration values
+        DB::table('external_configurations')->updateOrInsert(['key' => 'dynamics365_base_url'], [
+            'value' => $request['dynamics365_base_url'] ?? ''
+        ]);
+
+        DB::table('external_configurations')->updateOrInsert(['key' => 'dynamics365_client_id'], [
+            'value' => $request['dynamics365_client_id'] ?? ''
+        ]);
+
+        DB::table('external_configurations')->updateOrInsert(['key' => 'dynamics365_client_secret'], [
+            'value' => $request['dynamics365_client_secret'] ?? ''
+        ]);
+
+        DB::table('external_configurations')->updateOrInsert(['key' => 'dynamics365_tenant_id'], [
+            'value' => $request['dynamics365_tenant_id'] ?? ''
+        ]);
+
+        Toastr::success(translate('messages.successfully_updated'));
+        return back();
+    }
+
 }

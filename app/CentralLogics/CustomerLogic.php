@@ -107,6 +107,13 @@ class CustomerLogic
             $credit = (int)($amount * $settings['loyalty_point_item_purchase_point'] / 100);
         } else if ($transaction_type == 'point_to_wallet') {
             $debit = $amount;
+        } else if ($transaction_type == 'in_store_purchase') {
+            // For in-store purchases, the points amount comes from Dynamics 365
+            // The $amount parameter here is the points to award (not purchase amount)
+            $credit = (int)$amount;
+        } else if ($transaction_type == 'in_store_points_redeemed') {
+            // For in-store purchase redemption - deduct points without adding to wallet
+            $debit = (int)$amount;
         }
 
         $current_balance = $user->loyalty_point + $credit - $debit;

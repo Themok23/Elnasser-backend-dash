@@ -42,6 +42,14 @@ return [
             'after_commit' => false,
         ],
 
+        'd365-sync' => [
+            'driver' => 'database',
+            'table' => 'jobs',
+            'queue' => 'd365-sync',
+            'retry_after' => 90,
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => 'localhost',

@@ -687,6 +687,23 @@ class CustomerAuthController extends Controller
                     // Don't throw - email failure shouldn't prevent registration
                 }
 
+                // Sync customer to Dynamics 365 (non-critical, queued for reliability)
+                try {
+                    $dynamicsService = new \App\Services\Dynamics365Service();
+                    if ($dynamicsService->isEnabled()) {
+                        // Queue the sync job - if it fails, it will retry automatically
+                        // Data is preserved in queue, won't be lost
+                        $dynamicsService->createCustomerInD365($user, 'MobileApp', null, true);
+                    }
+                } catch(\Exception $ex) {
+                    \Log::warning('Failed to queue D365 sync job on registration', [
+                        'user_id' => $user->id,
+                        'error' => $ex->getMessage()
+                    ]);
+                    // Don't throw - Dynamics 365 sync failure shouldn't prevent registration
+                    // Even if queue fails, customer is still registered in Laravel
+                }
+
                 $user_email = null;
                 if($user->email){
                     $user_email = $user->email;

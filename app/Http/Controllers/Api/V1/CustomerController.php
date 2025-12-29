@@ -886,4 +886,23 @@ class CustomerController extends Controller
 
 
     }
+
+    /**
+     * Get customer QR code for in-store scanning
+     * Returns the phone number that can be used to generate a QR code
+     * Phone number works in both Laravel and Dynamics 365
+     */
+    public function get_qr_code(Request $request)
+    {
+        $user = $request->user();
+        
+        // Use phone number as QR code data (exists in both Laravel and Dynamics 365)
+        return response()->json([
+            'qr_code_data' => $user->phone, // Phone number - works in both systems
+            'customer_phone' => $user->phone,
+            'customer_name' => trim(($user->f_name ?? '') . ' ' . ($user->l_name ?? '')),
+            'customer_id' => $user->id,
+            'ref_code' => $user->ref_code ?? null, // Include ref_code if exists (for reference)
+        ], 200);
+    }
 }

@@ -27,7 +27,7 @@
         <!-- Page Header -->
 
         <!-- End Page Header -->
-        <form action="{{ route('admin.business-settings.external-system.update-drivemond-configuration') }}"
+        <form action="{{ route('admin.external-configuration.update-drivemond') }}"
               method="post"
               enctype="multipart/form-data">
             @csrf
@@ -112,6 +112,103 @@
                                 <button type="reset" id="reset_btn"
                                         class="btn btn--reset">{{ translate('messages.reset') }}</button>
                                 <button type="submit" id="submit"
+                                        class="btn btn--primary">{{ translate('messages.save_information') }}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        {{-- Dynamics 365 Configuration --}}
+        <form action="{{ route('admin.external-configuration.update-dynamics365') }}"
+              method="post"
+              enctype="multipart/form-data"
+              class="mt-4">
+            @csrf
+            <div class="row g-2">
+                <div class="col-lg-12">
+                    <div class="card">
+                        <div class="card-body">
+                            @php($dynamics365Enabled = \App\Models\ExternalConfiguration::where('key', 'dynamics365_enabled')->first())
+                            @php($dynamics365Enabled = $dynamics365Enabled ? $dynamics365Enabled->value : 0)
+                            <div class="border rounded d-flex flex-wrap gap-2 align-items-center p-3 p-sm-4">
+                                <div class="w-160px flex-grow-1">
+                                    <h5>{{translate('Dynamics 365 Integration')}}</h5>
+                                    <p class="fs-12 m-0">
+                                        {{translate('Enable Dynamics 365 integration for loyalty point management. Dynamics 365 will decide whether to award points for in-store purchases.')}}
+                                    </p>
+                                </div>
+                                <label class="toggle-switch toggle-switch-sm">
+                                    <input type="checkbox" value="1" class="toggle-switch-input" name="dynamics365_enabled"
+                                           id="dynamics365_enabled" {{ $dynamics365Enabled == 1 ? 'checked' : '' }}>
+                                    <span class="toggle-switch-label text">
+                                        <span class="toggle-switch-indicator"></span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="row g-4 mt-2">
+                                <div class="col-md-12">
+                                    @php($dynamics365BaseUrl = \App\Models\ExternalConfiguration::where('key', 'dynamics365_base_url')->first())
+                                    <div class="p-3 p-sm-4 bg-soft-secondary rounded">
+                                        <label class="form-label">{{ translate('Dynamics 365 Base URL') }}
+                                            <i class="tio-info-outined text-primary"
+                                               title="{{translate("Your Dynamics 365 instance URL (e.g., https://yourorg.crm.dynamics.com)")}}"
+                                               data-toggle="tooltip"></i>
+                                        </label>
+                                        <input type="url" id="dynamics365BaseUrl" name="dynamics365_base_url"
+                                               value="{{ $dynamics365BaseUrl->value ?? '' }}"
+                                               class="form-control"
+                                               placeholder="{{ translate('Ex: https://yourorg.crm.dynamics.com') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    @php($dynamics365ClientId = \App\Models\ExternalConfiguration::where('key', 'dynamics365_client_id')->first())
+                                    <div class="p-3 p-sm-4 bg-soft-secondary rounded">
+                                        <label class="form-label">{{ translate('Client ID (Application ID)') }}
+                                            <i class="tio-info-outined text-primary"
+                                               title="{{translate("Azure AD App Registration Client ID")}}"
+                                               data-toggle="tooltip"></i>
+                                        </label>
+                                        <input type="text" id="dynamics365ClientId" name="dynamics365_client_id"
+                                               value="{{ $dynamics365ClientId->value ?? '' }}"
+                                               class="form-control"
+                                               placeholder="{{ translate('Enter Client ID') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    @php($dynamics365TenantId = \App\Models\ExternalConfiguration::where('key', 'dynamics365_tenant_id')->first())
+                                    <div class="p-3 p-sm-4 bg-soft-secondary rounded">
+                                        <label class="form-label">{{ translate('Tenant ID (Directory ID)') }}
+                                            <i class="tio-info-outined text-primary"
+                                               title="{{translate("Azure AD Tenant ID")}}"
+                                               data-toggle="tooltip"></i>
+                                        </label>
+                                        <input type="text" id="dynamics365TenantId" name="dynamics365_tenant_id"
+                                               value="{{ $dynamics365TenantId->value ?? '' }}"
+                                               class="form-control"
+                                               placeholder="{{ translate('Enter Tenant ID') }}">
+                                    </div>
+                                </div>
+                                <div class="col-md-12">
+                                    @php($dynamics365ClientSecret = \App\Models\ExternalConfiguration::where('key', 'dynamics365_client_secret')->first())
+                                    <div class="p-3 p-sm-4 bg-soft-secondary rounded">
+                                        <label class="form-label">{{ translate('Client Secret') }}
+                                            <i class="tio-info-outined text-primary"
+                                               title="{{translate("Azure AD App Registration Client Secret")}}"
+                                               data-toggle="tooltip"></i>
+                                        </label>
+                                        <input type="password" id="dynamics365ClientSecret" name="dynamics365_client_secret"
+                                               value="{{ $dynamics365ClientSecret->value ?? '' }}"
+                                               class="form-control"
+                                               placeholder="{{ translate('Enter Client Secret') }}">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="btn--container justify-content-end mt-20">
+                                <button type="reset" id="reset_btn_dynamics365"
+                                        class="btn btn--reset">{{ translate('messages.reset') }}</button>
+                                <button type="submit" id="submit_dynamics365"
                                         class="btn btn--primary">{{ translate('messages.save_information') }}</button>
                             </div>
                         </div>

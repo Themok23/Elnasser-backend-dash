@@ -471,10 +471,11 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::delete('/delete/{file_path}', 'FileManagerController@destroy')->name('destroy');
             });
 
-            // Route::group(['prefix' => 'external-system', 'as' => 'external-system.'], function () {
-            //     Route::get('drivemond-configuration', 'ExternalConfigurationController@index')->name('drivemond-configuration');
-            //     Route::post('update-drivemond-configuration', 'ExternalConfigurationController@updateDrivemondConfiguration')->name('update-drivemond-configuration');
-            // });
+            Route::group(['prefix' => 'external-configuration', 'as' => 'external-configuration.'], function () {
+                Route::get('index', 'ExternalConfigurationController@index')->name('index');
+                Route::post('update-drivemond', 'ExternalConfigurationController@updateDrivemondConfiguration')->name('update-drivemond');
+                Route::post('update-dynamics365', 'ExternalConfigurationController@updateDynamics365Configuration')->name('update-dynamics365');
+            });
             Route::group(['prefix' => 'third-party', 'as' => 'third-party.'], function () {
                 Route::get('sms-module', 'SMSModuleController@sms_index')->name('sms-module');
                 Route::post('sms-module-update/{sms_module}', 'SMSModuleController@sms_update')->name('sms-module-update');
@@ -574,6 +575,13 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::get('export', 'CustomerController@export')->name('export');
                 Route::get('order-export', 'CustomerController@customer_order_export')->name('order-export');
                 Route::get('trip-export', 'CustomerController@customer_trip_export')->name('trip-export');
+            });
+
+            // In-store purchase routes (for employee scanning)
+            Route::group(['prefix' => 'in-store-purchase', 'as' => 'in-store-purchase.'], function () {
+                Route::post('check-purchase', 'InStorePurchaseController@checkPurchaseWithDynamics')->name('check-purchase');
+                Route::post('add-points', 'InStorePurchaseController@addPointsAfterApproval')->name('add-points');
+                Route::get('customer-info', 'InStorePurchaseController@getCustomerByPhone')->name('customer-info');
             });
         });
         //Pos system

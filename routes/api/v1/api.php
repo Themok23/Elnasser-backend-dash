@@ -347,6 +347,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::post('update-profile', 'CustomerController@update_profile');
             Route::post('update-interest', 'CustomerController@update_interest');
             Route::put('cm-firebase-token', 'CustomerController@update_cm_firebase_token');
+            Route::get('qr-code', 'CustomerController@get_qr_code');
             Route::get('suggested-items', 'CustomerController@get_suggested_item');
             //Remove account
             Route::delete('remove-account', 'CustomerController@remove_account');
@@ -519,6 +520,13 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
         Route::get('parcel-category','ParcelCategoryController@index');
         Route::get('advertisement/list', 'AdvertisementController@get_adds');
+
+        // Dynamics 365 Integration Endpoints (D365 calls Laravel)
+        Route::group(['prefix' => 'dynamics365'], function () {
+            Route::get('customer-by-phone', 'D365IntegrationController@getCustomerByPhone');
+            Route::post('add-points', 'D365IntegrationController@addPoints');
+            Route::post('bulk-sync-customers', 'D365IntegrationController@bulkSyncCustomers');
+        });
 
     });
     Route::get('vehicle/extra_charge', 'ConfigController@extra_charge');
