@@ -6,8 +6,6 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use Exception;
 
 class UserSeeder extends Seeder
 {
@@ -18,13 +16,10 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-        $this->command->info('========================================');
-        $this->command->info('Starting User Seeder...');
-        $this->command->info('========================================');
+        $this->command->info('Seeding customers...');
 
-        try {
-            // Create customers with different statuses and data completeness
-            $customers = [
+        // Create customers with different statuses and data completeness
+        $customers = [
             // Complete customers with all data
             [
                 'f_name' => 'Ahmed',
@@ -177,162 +172,45 @@ class UserSeeder extends Seeder
             ],
         ];
 
-            $createdCount = 0;
-            $skippedCount = 0;
-            $errorCount = 0;
-            $totalCustomers = count($customers);
+        $createdCount = 0;
+        foreach ($customers as $customerData) {
+            // Check if customer already exists
+            $existingCustomer = User::where('phone', $customerData['phone'])->first();
 
-            $this->command->info("Processing {$totalCustomers} customer records...");
-            $this->command->newLine();
+            if (!$existingCustomer) {
+                $customer = User::create(array_merge($customerData, [
+                    'image' => 'def.png',
+                    'login_medium' => 'manual',
+                    'current_language_key' => 'en',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
 
-            foreach ($customers as $index => $customerData) {
-                $customerNumber = $index + 1;
-                $phone = $customerData['phone'] ?? 'N/A';
+                // Generate and assign ref_code
+                $customer->ref_code = Helpers::generate_referer_code();
+                $customer->save();
 
-                try {
-                    $this->command->info("[{$customerNumber}/{$totalCustomers}] Processing: {$phone}");
-
-                    // Check if customer already exists
-                    $existingCustomer = User::where('phone', $phone)->first();
-
-                    if ($existingCustomer) {
-                        $this->command->warn("  ⚠️  Customer already exists, skipping...");
-                        $skippedCount++;
-                        continue;
-                    }
-
-                    // Validate required fields
-                    if (empty($customerData['f_name']) || empty($customerData['phone'])) {
-                        throw new Exception("Missing required fields: f_name or phone");
-                    }
-
-                    // Prepare customer data with defaults
-                    $userData = array_merge($customerData, [
-                        'image' => $customerData['image'] ?? 'def.png',
-                        'login_medium' => $customerData['login_medium'] ?? 'manual',
-                        'current_language_key' => $customerData['current_language_key'] ?? 'en',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-
-                    // Remove null values that might cause issues
-                    $userData = array_filter($userData, function($value) {
-                        return $value !== null;
-                    });
-
-                    // Create customer
-                    $this->command->info("  → Creating user...");
-                    $customer = User::create($userData);
-
-                    if (!$customer || !$customer->id) {
-                        throw new Exception("Failed to create user record");
-                    }
-
-                    $this->command->info("  ✓ User created with ID: {$customer->id}");
-
-                    // Generate and assign ref_code
-                    try {
-                        $refCode = Helpers::generate_referer_code();
-                        $customer->ref_code = $refCode;
-                        $customer->save();
-                        $this->command->info("  ✓ Ref code generated: {$refCode}");
-                    } catch (Exception $e) {
-                        $this->command->warn("  ⚠️  Failed to generate ref_code: " . $e->getMessage());
-                        Log::warning("UserSeeder: Failed to generate ref_code for user {$customer->id}", [
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-
-                    // Update tier based on loyalty points
-                    try {
-                        if (method_exists($customer, 'updateTier')) {
-                            $customer->updateTier();
-                            $this->command->info("  ✓ Tier updated: " . ($customer->tier ?? 'N/A'));
-                        }
-                    } catch (Exception $e) {
-                        $this->command->warn("  ⚠️  Failed to update tier: " . $e->getMessage());
-                        Log::warning("UserSeeder: Failed to update tier for user {$customer->id}", [
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-
-                    // Create storage record for image
-                    try {
-                        DB::table('storages')->insertOrIgnore([
-                            'data_type' => User::class,
-                            'data_id' => $customer->id,
-                            'key' => 'image',
-                            'value' => 'public',
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                        $this->command->info("  ✓ Storage record created");
-                    } catch (Exception $e) {
-                        $this->command->warn("  ⚠️  Failed to create storage record: " . $e->getMessage());
-                        Log::warning("UserSeeder: Failed to create storage record for user {$customer->id}", [
-                            'error' => $e->getMessage()
-                        ]);
-                    }
-
-                    $createdCount++;
-                    $this->command->info("  ✅ Successfully created customer: {$customer->f_name} {$customer->l_name}");
-                    $this->command->newLine();
-
-                } catch (Exception $e) {
-                    $errorCount++;
-                    $this->command->error("  ❌ Error processing customer {$phone}: " . $e->getMessage());
-                    $this->command->error("  Stack trace: " . $e->getFile() . ":" . $e->getLine());
-                    Log::error("UserSeeder: Failed to create customer", [
-                        'phone' => $phone,
-                        'error' => $e->getMessage(),
-                        'trace' => $e->getTraceAsString()
-                    ]);
-                    $this->command->newLine();
+                // Update tier based on loyalty points
+                if (method_exists($customer, 'updateTier')) {
+                    $customer->updateTier();
                 }
+
+                // Create storage record for image
+                DB::table('storages')->insertOrIgnore([
+                    'data_type' => User::class,
+                    'data_id' => $customer->id,
+                    'key' => 'image',
+                    'value' => 'public',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $createdCount++;
             }
-
-            // Summary
-            $this->command->newLine();
-            $this->command->info('========================================');
-            $this->command->info('Seeding Summary:');
-            $this->command->info('========================================');
-            $this->command->info("Total customers processed: {$totalCustomers}");
-            $this->command->info("✅ Successfully created: {$createdCount}");
-            $this->command->info("⚠️  Skipped (already exists): {$skippedCount}");
-            $this->command->info("❌ Errors: {$errorCount}");
-            $this->command->info('========================================');
-            $this->command->newLine();
-
-            if ($createdCount > 0) {
-                $this->command->info('Customer credentials (for complete users):');
-                $this->command->info('  Password: Password123');
-                $this->command->newLine();
-            }
-
-            if ($errorCount > 0) {
-                $this->command->warn("⚠️  {$errorCount} errors occurred. Check logs for details.");
-                $this->command->info("Log file: storage/logs/laravel.log");
-            }
-
-        } catch (Exception $e) {
-            $this->command->error('========================================');
-            $this->command->error('FATAL ERROR in UserSeeder:');
-            $this->command->error('========================================');
-            $this->command->error("Message: " . $e->getMessage());
-            $this->command->error("File: " . $e->getFile());
-            $this->command->error("Line: " . $e->getLine());
-            $this->command->error("Stack Trace:");
-            $this->command->error($e->getTraceAsString());
-            $this->command->error('========================================');
-
-            Log::error("UserSeeder: Fatal error", [
-                'error' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            throw $e; // Re-throw to stop execution
         }
+
+        $this->command->info("Seeded {$createdCount} customers");
+        $this->command->info('Customer credentials (for complete users):');
+        $this->command->info('  Password: Password123');
     }
 }

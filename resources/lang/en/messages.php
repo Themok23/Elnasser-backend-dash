@@ -8908,4 +8908,8 @@ Smartly or Earn. ',
   'wallet_settings' => 'Wallet settings',
   'refund_to_wallet_hint' => 'Refund to wallet hint',
   'customer_loyalty_point_settings' => 'Customer loyalty point settings',
+  'no_fields_to_update' => 'No fields to update',
+  'user_already_complete' => 'User already complete',
+  'The password must be a string.' => 'The password must be a string.',
+  'Email already exists' => 'Email already exists',
 );

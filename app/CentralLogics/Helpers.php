@@ -3214,7 +3214,7 @@ class Helpers
         }
 
         if ($data && Storage::disk('public')->exists($path . '/' . $data)) {
-            return asset('storage') . '/' . $path . '/' . $data;
+            return asset('public/storage') . '/' . $path . '/' . $data;
         }
 
         if (request()->is('api/*')) {
