@@ -185,7 +185,7 @@ class LoyaltyCustomerSeeder extends Seeder
         $this->command->info("Processing {$totalCustomers} customers...");
         $this->command->newLine();
 
-        $progressBar = $this->output->createProgressBar($totalCustomers);
+        $progressBar = $this->command->getOutput()->createProgressBar($totalCustomers);
         $progressBar->start();
 
         foreach ($customers as $index => $customerData) {
