@@ -219,32 +219,75 @@ class DashboardController extends Controller
 
     public function dashboard(Request $request)
     {
-        $params = [
-            'zone_id' => $request['zone_id'] ?? 'all',
-            'module_id' => Config::get('module.current_module_id'),
-            'statistics_type' => $request['statistics_type'] ?? 'overall',
-            'user_overview' => $request['user_overview'] ?? 'overall',
-            'commission_overview' => $request['commission_overview'] ?? 'this_year',
-            'business_overview' => $request['business_overview'] ?? 'overall',
-        ];
-        session()->put('dash_params', $params);
-        $data = self::dashboard_data($request);
-        $total_sell = $data['total_sell'];
-        $commission = $data['commission'];
-        $delivery_commission = $data['delivery_commission'];
-        $label = $data['label'];
-        $module_type = Config::get('module.current_module_type');
-        if ($module_type == 'settings') {
-            return redirect()->route('admin.business-settings.business-setup');
+        try {
+            $module_type = Config::get('module.current_module_type');
+            
+            // Handle null or empty module_type FIRST before any data processing
+            if (empty($module_type) || $module_type == 'settings') {
+                return redirect()->route('admin.business-settings.business-setup');
+            }
+            
+            if ($module_type == 'rental' && addon_published_status('Rental') == 1) {
+                return redirect()->route('admin.rental.dashboard');
+            }
+            if ($module_type == 'rental' && addon_published_status('Rental') == 0) {
+                return view('errors.404');
+            }
+            
+            $module_id = Config::get('module.current_module_id');
+            
+            // If module_id is null, redirect to business settings
+            if (empty($module_id)) {
+                return redirect()->route('admin.business-settings.business-setup');
+            }
+            
+            $params = [
+                'zone_id' => $request['zone_id'] ?? 'all',
+                'module_id' => $module_id,
+                'statistics_type' => $request['statistics_type'] ?? 'overall',
+                'user_overview' => $request['user_overview'] ?? 'overall',
+                'commission_overview' => $request['commission_overview'] ?? 'this_year',
+                'business_overview' => $request['business_overview'] ?? 'overall',
+            ];
+            session()->put('dash_params', $params);
+            
+            // Validate that the dashboard view exists before processing data
+            $view_name = "admin-views.dashboard-{$module_type}";
+            if (!view()->exists($view_name)) {
+                // Fallback to food dashboard if view doesn't exist
+                $module_type = 'food';
+                $view_name = "admin-views.dashboard-{$module_type}";
+            }
+            
+            $data = self::dashboard_data($request);
+            $total_sell = $data['total_sell'];
+            $commission = $data['commission'];
+            $delivery_commission = $data['delivery_commission'];
+            $label = $data['label'];
+            
+            return view($view_name, compact('data', 'total_sell', 'commission', 'delivery_commission', 'label', 'params', 'module_type'));
+        } catch (\Exception $e) {
+            \Log::error('Dashboard error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'module_type' => $module_type ?? 'unknown'
+            ]);
+            
+            // Fallback: try to redirect to business settings or show error
+            if (empty($module_type)) {
+                return redirect()->route('admin.business-settings.business-setup');
+            }
+            
+            // If we have a module_type but error occurred, try food dashboard
+            return view('admin-views.dashboard-food', [
+                'data' => [],
+                'total_sell' => [],
+                'commission' => [],
+                'delivery_commission' => [],
+                'label' => [],
+                'params' => $params ?? [],
+                'module_type' => 'food'
+            ]);
         }
-        if ($module_type == 'rental' && addon_published_status('Rental') == 1) {
-            return redirect()->route('admin.rental.dashboard');
-        }
-        if ($module_type == 'rental' && addon_published_status('Rental') == 0) {
-            return view('errors.404');
-        }
-        return view("admin-views.dashboard-{$module_type}", compact('data', 'total_sell', 'commission', 'delivery_commission', 'label', 'params', 'module_type'));
-
     }
 
     public function order(Request $request)
@@ -384,7 +427,8 @@ class DashboardController extends Controller
             }
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            // Avoid loading all users into memory (can crash with large datasets)
+            $total_customers = User::query();
         } elseif ($module_id && $params['statistics_type'] == 'this_year') {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereYear('created_at', now()->format('Y'));
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereYear('accepted', now()->format('Y'));
@@ -401,7 +445,8 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            // Avoid loading all users into memory (can crash with large datasets)
+            $total_customers = User::query();
         } elseif ($module_id && $params['statistics_type'] == 'this_month') {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereMonth('created_at', now()->format('m'))->whereYear('created_at', now()->format('Y'));
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereMonth('accepted', now()->format('m'))->whereYear('accepted', now()->format('Y'));
@@ -418,7 +463,8 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            // Avoid loading all users into memory (can crash with large datasets)
+            $total_customers = User::query();
         } elseif ($module_id && $params['statistics_type'] == 'this_week') {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id)->whereBetween('created_at', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id)->whereBetween('accepted', [now()->startOfWeek()->format('Y-m-d H:i:s'), now()->endOfWeek()->format('Y-m-d H:i:s')]);
@@ -435,7 +481,8 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            // Avoid loading all users into memory (can crash with large datasets)
+            $total_customers = User::query();
         } elseif ($module_id) {
             $searching_for_dm = Order::SearchingForDeliveryman()->where('module_id', $module_id);
             $accepted_by_dm = Order::AccepteByDeliveryman()->where('module_id', $module_id);
@@ -452,7 +499,8 @@ class DashboardController extends Controller
             $total_orders = Order::where('module_id', $module_id);
             $total_items = Item::where('is_approved', 1)->where('module_id', $module_id);
             $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->where('module_id', $module_id);
-            $total_customers = User::all();
+            // Avoid loading all users into memory (can crash with large datasets)
+            $total_customers = User::query();
         } else {
             $searching_for_dm = Order::SearchingForDeliveryman();
             $accepted_by_dm = Order::AccepteByDeliveryman();
@@ -466,10 +514,11 @@ class DashboardController extends Controller
             $new_items = Item::where('is_approved', 1)->whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'));
             $new_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'));
             $new_customers = User::whereDate('created_at', '>=', now()->subDays(30)->format('Y-m-d'));
-            $total_orders = Order::all();
-            $total_items = Item::where('is_approved', 1)->get();
-            $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1))->get();
-            $total_customers = User::all();
+            // Avoid loading huge tables into memory (can crash with large datasets)
+            $total_orders = Order::query();
+            $total_items = Item::where('is_approved', 1);
+            $total_stores = Store::whereHas('vendor', fn($query) => $query->where('status', 1));
+            $total_customers = User::query();
         }
 
         if (is_numeric($zone_id) && $module_id && !in_array($module_type, ['parcel'])) {
@@ -628,10 +677,30 @@ class DashboardController extends Controller
 
     public function dashboard_data($request)
     {
+        // Ensure we always have dashboard params (AJAX endpoints can hit this without a prior full dashboard load)
         $params = session('dash_params');
-        if (!url()->current() == $request->is('admin/users')) {
+        if (!is_array($params)) {
+            $params = [
+                'zone_id' => $request['zone_id'] ?? 'all',
+                'module_id' => Config::get('module.current_module_id'),
+                'statistics_type' => $request['statistics_type'] ?? 'overall',
+                'user_overview' => $request['user_overview'] ?? 'overall',
+                'commission_overview' => $request['commission_overview'] ?? 'this_year',
+                'business_overview' => $request['business_overview'] ?? 'overall',
+            ];
+            session()->put('dash_params', $params);
+        }
+
+        // Always initialize to avoid undefined-variable fatals
+        $data_os = [];
+        $data_uo = [];
+        $dash_data = [];
+
+        // Compute order + user overview for all admin pages except the users dashboard
+        if (!$request->is('admin/users*')) {
             $data_os = self::order_stats_calc($params['zone_id'], $params['module_id']);
             $data_uo = self::user_overview_calc($params['zone_id'], $params['module_id']);
+            $dash_data = array_merge($data_os, $data_uo);
         }
         $popular = Wishlist::with(['store'])
             ->whereHas('store')
@@ -735,6 +804,7 @@ class DashboardController extends Controller
         );
         $total_sell = [];
         $commission = [];
+        $delivery_commission = [];
         $label = [];
         $query = OrderTransaction::NotRefunded()
             ->when(is_numeric($params['module_id']), function ($q) use ($params) {
@@ -907,10 +977,6 @@ class DashboardController extends Controller
                         ->sum('delivery_fee_comission');
                 }
                 $label = $months;
-        }
-
-        if (!url()->current() == $request->is('admin/users')) {
-            $dash_data = array_merge($data_os, $data_uo);
         }
 
         $dash_data['popular'] = $popular;
