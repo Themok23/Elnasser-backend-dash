@@ -170,13 +170,37 @@ class CreateModuleAndSeed extends Command
 
             // Optional: move existing stores/orders into the new module id
             if ($this->option('move-existing') && $cloneFrom !== null) {
-                $this->warn("Moving existing data from module {$cloneFrom} -> {$id} (stores + orders)...");
+                $this->warn("Moving existing data from module {$cloneFrom} -> {$id} (stores + orders + users.module_ids if present)...");
                 if (!$dryRun) {
                     if (Schema::hasTable('stores') && Schema::hasColumn('stores', 'module_id')) {
                         DB::table('stores')->where('module_id', $cloneFrom)->update(['module_id' => $id]);
                     }
                     if (Schema::hasTable('orders') && Schema::hasColumn('orders', 'module_id')) {
                         DB::table('orders')->where('module_id', $cloneFrom)->update(['module_id' => $id]);
+                    }
+                    // Users store interested modules as JSON in a string column `module_ids` in many installs.
+                    // For demo environments, it's usually fine (and desired) to point everyone to the new module.
+                    if (Schema::hasTable('users') && Schema::hasColumn('users', 'module_ids')) {
+                        $all = DB::table('users')->select('id', 'module_ids')->get();
+                        foreach ($all as $u) {
+                            $ids = [];
+                            if (!empty($u->module_ids)) {
+                                $decoded = json_decode($u->module_ids, true);
+                                if (is_array($decoded)) {
+                                    $ids = $decoded;
+                                }
+                            }
+                            // Replace old module id with new, or if empty set to [new]
+                            $ids = array_values(array_unique(array_map('intval', $ids)));
+                            if (empty($ids)) {
+                                $ids = [$id];
+                            } else {
+                                $ids = array_values(array_filter($ids, fn ($x) => $x !== (int) $cloneFrom));
+                                $ids[] = $id;
+                                $ids = array_values(array_unique($ids));
+                            }
+                            DB::table('users')->where('id', $u->id)->update(['module_ids' => json_encode($ids)]);
+                        }
                     }
                 }
             }
