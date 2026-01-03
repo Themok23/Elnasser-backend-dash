@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
@@ -26,7 +27,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Mohamed',
                 'phone' => '+201012345678',
                 'email' => 'ahmed.mohamed@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -41,7 +42,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Ali',
                 'phone' => '+201012345679',
                 'email' => 'fatima.ali@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -56,7 +57,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Hassan',
                 'phone' => '+201012345680',
                 'email' => 'mohamed.hassan@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 0,
@@ -115,7 +116,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Mahmoud',
                 'phone' => '+201012345684',
                 'email' => 'youssef.mahmoud@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -130,7 +131,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Said',
                 'phone' => '+201012345685',
                 'email' => 'nour.said@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -145,7 +146,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Fahmy',
                 'phone' => '+201012345686',
                 'email' => 'khaled.fahmy@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -160,7 +161,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Tarek',
                 'phone' => '+201012345687',
                 'email' => 'mariam.tarek@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
