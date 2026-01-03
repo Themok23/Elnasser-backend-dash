@@ -52,6 +52,7 @@ class User extends Authenticatable
         'loyalty_point' => 'integer',
         'ref_by' => 'integer',
         'tier' => 'string',
+        'tier_is_manual' => 'boolean',
     ];
     protected $appends = ['image_full_url', 'tier_level'];
     public function getImageFullUrlAttribute(){
@@ -99,12 +100,29 @@ class User extends Authenticatable
      */
     public function updateTier()
     {
+        // If admin manually set the tier, do not auto-recalculate.
+        if ($this->tier_is_manual) {
+            return;
+        }
         $newTier = $this->tier_level;
         if ($this->tier !== $newTier) {
             $this->tier = $newTier;
             // Use updateQuietly to avoid triggering model events
             $this->updateQuietly(['tier' => $newTier]);
         }
+    }
+
+    /**
+     * Effective tier used by APIs: manual tier (if enabled) otherwise computed tier level.
+     * Not appended to JSON by default (used internally).
+     */
+    public function getEffectiveTierAttribute(): string
+    {
+        if ($this->tier_is_manual && in_array($this->tier, ['bronze', 'silver', 'gold'], true)) {
+            return $this->tier;
+        }
+
+        return $this->tier_level ?? 'bronze';
     }
 
     public function scopeOfStatus($query, $status): void

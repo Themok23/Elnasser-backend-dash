@@ -348,6 +348,23 @@
                                             <div>{{ translate('email') }}</div>:
                                             <a href="mailto:{{ $customer['email'] }}" class="text-dark font-semibold">{{$customer['email'] ?? translate('messages.N/A')}}</a>
                                         </div>
+                                        <div class="key-val-list-item d-flex gap-3 align-items-center">
+                                            <div>{{ translate('messages.tier') ?? 'Tier' }}</div>:
+                                            <form action="{{ route('admin.users.customer.tier.update', [$customer->id]) }}" method="post" class="d-flex flex-wrap align-items-center gap-2">
+                                                @csrf
+                                                <label class="mb-0 d-flex align-items-center gap-2">
+                                                    <input type="hidden" name="tier_is_manual" value="0">
+                                                    <input type="checkbox" name="tier_is_manual" value="1" {{ ($customer->tier_is_manual ?? false) ? 'checked' : '' }}>
+                                                    <span class="font-semibold">Manual</span>
+                                                </label>
+                                                <select name="tier" class="form-control" style="max-width: 160px;">
+                                                    <option value="bronze" {{ (($customer->tier ?? 'bronze') === 'bronze') ? 'selected' : '' }}>Bronze</option>
+                                                    <option value="silver" {{ ($customer->tier === 'silver') ? 'selected' : '' }}>Silver</option>
+                                                    <option value="gold" {{ ($customer->tier === 'gold') ? 'selected' : '' }}>Gold</option>
+                                                </select>
+                                                <button type="submit" class="btn btn-sm btn--primary">Save</button>
+                                            </form>
+                                        </div>
                                         @foreach($customer->addresses as $address)
                                             <div class="key-val-list-item d-flex gap-3">
                                                 <div>{{ translate('address') }}</div>:

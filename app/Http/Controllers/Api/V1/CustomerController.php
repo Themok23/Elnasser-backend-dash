@@ -192,20 +192,23 @@ class CustomerController extends Controller
         $data['discount_amount_type'] = data_get($discount_data, 'discount_amount_type');
         $data['validity'] = (string)data_get($discount_data, 'validity');
 
-        // Add tier information
-        $tier = $data->tier_level;
+        // Add tier information (manual tier override supported)
+        $tier = $user->effective_tier;
         $data['tier'] = $tier;
         $data['tier_name'] = ucfirst($tier);
         $data['points_to_next_tier'] = self::calculatePointsToNextTier($data->loyalty_point ?? 0);
+        $data['tier_is_manual'] = (bool) ($user->tier_is_manual ?? false);
 
         // Add tier-specific point value multiplier
         $tierMultiplierKey = 'tier_' . $tier . '_multiplier';
-        $tierMultiplier = (float) BusinessSetting::where('key', $tierMultiplierKey)->first()->value ?? 1.0;
+        $tierMultiplierSetting = BusinessSetting::where('key', $tierMultiplierKey)->first();
+        $tierMultiplier = (float) (($tierMultiplierSetting?->value) ?? 1.0);
         $data['tier_multiplier'] = $tierMultiplier;
         $data['point_value_multiplier'] = $tierMultiplier; // Alias for clarity
 
         // Calculate effective point value (if exchange rate is set)
-        $exchangeRate = (float) BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first()->value ?? 0;
+        $exchangeRateSetting = BusinessSetting::where('key', 'loyalty_point_exchange_rate')->first();
+        $exchangeRate = (float) (($exchangeRateSetting?->value) ?? 0);
         if ($exchangeRate > 0) {
             $data['effective_point_value'] = (1 / $exchangeRate) * $tierMultiplier;
         } else {

@@ -6,6 +6,8 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class UserSeeder extends Seeder
 {
@@ -18,6 +20,10 @@ class UserSeeder extends Seeder
     {
         $this->command->info('Seeding customers...');
 
+        // Optional: seed customer interested modules into `users.module_ids` as JSON array.
+        // Example: SEED_MODULE_ID=3 php artisan db:seed --class=UserSeeder --force
+        $seedModuleId = (int) env('SEED_MODULE_ID', 0);
+
         // Create customers with different statuses and data completeness
         $customers = [
             // Complete customers with all data
@@ -26,7 +32,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Mohamed',
                 'phone' => '+201012345678',
                 'email' => 'ahmed.mohamed@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -41,7 +47,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Ali',
                 'phone' => '+201012345679',
                 'email' => 'fatima.ali@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -56,7 +62,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Hassan',
                 'phone' => '+201012345680',
                 'email' => 'mohamed.hassan@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 0,
@@ -115,7 +121,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Mahmoud',
                 'phone' => '+201012345684',
                 'email' => 'youssef.mahmoud@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -130,7 +136,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Said',
                 'phone' => '+201012345685',
                 'email' => 'nour.said@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -145,7 +151,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Fahmy',
                 'phone' => '+201012345686',
                 'email' => 'khaled.fahmy@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -160,7 +166,7 @@ class UserSeeder extends Seeder
                 'l_name' => 'Tarek',
                 'phone' => '+201012345687',
                 'email' => 'mariam.tarek@example.com',
-                'password' => bcrypt('Password123'),
+                'password' => Hash::make('Password123'),
                 'status' => 1,
                 'is_phone_verified' => 1,
                 'is_email_verified' => 1,
@@ -178,7 +184,16 @@ class UserSeeder extends Seeder
             $existingCustomer = User::where('phone', $customerData['phone'])->first();
 
             if (!$existingCustomer) {
-                $customer = User::create(array_merge($customerData, [
+                // Some DBs have CHECK constraints requiring `users.sales_agent_ids` to be valid JSON (e.g. '[]').
+                $optionalFields = [];
+                if (Schema::hasColumn('users', 'sales_agent_ids')) {
+                    $optionalFields['sales_agent_ids'] = '[]';
+                }
+                if ($seedModuleId > 0 && Schema::hasColumn('users', 'module_ids')) {
+                    $optionalFields['module_ids'] = json_encode([$seedModuleId]);
+                }
+
+                $customer = User::create(array_merge($customerData, $optionalFields, [
                     'image' => 'def.png',
                     'login_medium' => 'manual',
                     'current_language_key' => 'en',

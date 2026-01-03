@@ -79,6 +79,8 @@ class OrderController extends Controller
 
     public function get_order_list(Request $request)
     {
+            DB::enableQueryLog(); // ✅ START logging
+
         $validator = Validator::make($request->all(), [
             'limit' => 'required',
             'offset' => 'required',
@@ -96,7 +98,10 @@ class OrderController extends Controller
                 $query->where('is_guest', 0);
             })
 
+
             ->Notpos()->latest()->paginate($request['limit'], ['*'], 'page', $request['offset']);
+                 $queries = DB::getQueryLog();
+                dd($queries);
         $orders = array_map(function ($data) {
             return [
                 'id' => $data->id,

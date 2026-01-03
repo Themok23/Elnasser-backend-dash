@@ -86,8 +86,8 @@ class D365IntegrationController extends Controller
                 'phone' => $customer->phone,
                 'email' => $customer->email,
                 'current_points' => (int)($customer->loyalty_point ?? 0),
-                'current_tier' => $customer->tier_level ?? 'bronze',
-                'tier_name' => ucfirst($customer->tier_level ?? 'bronze'),
+                'current_tier' => $customer->effective_tier ?? 'bronze',
+                'tier_name' => ucfirst($customer->effective_tier ?? 'bronze'),
             ]
         ], 200);
     }
@@ -148,7 +148,7 @@ class D365IntegrationController extends Controller
         $finalPurchaseAmount = $request->final_purchase_amount ?? $request->purchase_amount;
         $reference = $request->reference ?? 'D365-' . now()->format('Y-m-d-H-i-s');
         $previousPoints = (int)($customer->loyalty_point ?? 0);
-        $previousTier = $customer->tier_level ?? 'bronze';
+        $previousTier = $customer->effective_tier ?? 'bronze';
 
         // Validate customer has enough points if using points
         if ($pointsUsed > 0 && $previousPoints < $pointsUsed) {
@@ -235,7 +235,7 @@ class D365IntegrationController extends Controller
 
             // Calculate net points change
             $netPointsChange = $pointsToAward - $pointsUsed;
-            $tierUpgraded = $previousTier !== ($customer->tier_level ?? 'bronze');
+            $tierUpgraded = $previousTier !== ($customer->effective_tier ?? 'bronze');
 
             return response()->json([
                 'success' => true,
@@ -247,8 +247,8 @@ class D365IntegrationController extends Controller
                     'customer_id' => $customer->id,
                     'name' => trim(($customer->f_name ?? '') . ' ' . ($customer->l_name ?? '')),
                     'total_points' => (int)($customer->loyalty_point ?? 0),
-                    'tier' => $customer->tier_level ?? 'bronze',
-                    'tier_name' => ucfirst($customer->tier_level ?? 'bronze'),
+                    'tier' => $customer->effective_tier ?? 'bronze',
+                    'tier_name' => ucfirst($customer->effective_tier ?? 'bronze'),
                     'tier_upgraded' => $tierUpgraded,
                 ]
             ], 200);

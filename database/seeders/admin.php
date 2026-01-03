@@ -43,22 +43,6 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
         //dashboard
         Route::get('/', 'DashboardController@dashboard')->name('dashboard');
 
-        // Missions (global)
-        Route::group(['prefix' => 'missions', 'as' => 'missions.'], function () {
-            Route::get('/', 'MissionController@index')->name('index');
-            Route::get('create', 'MissionController@create')->name('create');
-            Route::post('store', 'MissionController@store')->name('store');
-            Route::get('{id}/edit', 'MissionController@edit')->name('edit');
-            Route::post('{id}/update', 'MissionController@update')->name('update');
-            Route::delete('{id}', 'MissionController@destroy')->name('destroy');
-            Route::get('{id}/toggle-status', 'MissionController@toggleStatus')->name('toggle-status');
-
-            Route::get('submissions', 'MissionSubmissionController@index')->name('submissions.index');
-            Route::get('submissions/{id}', 'MissionSubmissionController@show')->name('submissions.show');
-            Route::post('submissions/{id}/approve', 'MissionSubmissionController@approve')->name('submissions.approve');
-            Route::post('submissions/{id}/reject', 'MissionSubmissionController@reject')->name('submissions.reject');
-        });
-
         Route::get('maintenance-mode', 'SystemController@maintenance_mode')->name('maintenance-mode');
         Route::get('landing-page', 'SystemController@landing_page')->name('landing-page');
 
@@ -736,7 +720,6 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::get('list', 'CustomerController@customer_list')->name('list');
                 Route::get('rental-view/{user_id}', 'CustomerController@rentalView')->name('rental.view');
                 Route::get('view/{user_id}', 'CustomerController@view')->name('view');
-                Route::post('tier/{user_id}', 'CustomerController@update_tier')->name('tier.update');
                 Route::post('search', 'CustomerController@search')->name('search');
                 Route::get('status/{customer}/{status}file-manager', 'CustomerController@status')->name('status');
             });
