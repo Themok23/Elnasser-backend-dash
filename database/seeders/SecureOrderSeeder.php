@@ -51,6 +51,11 @@ class SecureOrderSeeder extends Seeder
                 'store_id' => $store->id,
                 'zone_id' => $store->zone_id ?? 1,
                 'module_id' => $moduleId, // fixes orders_module_id_foreign
+                // These two fields are required for the customer order APIs to return the seeded orders:
+                // - OrderController uses ->Notpos() which excludes NULL order_type in SQL comparisons
+                // - OrderController enforces is_guest = 0 for authenticated customers
+                'order_type' => 'delivery',
+                'is_guest' => 0,
                 'order_amount' => rand(100, 1500),
                 'order_status' => $statuses[array_rand($statuses)],
                 'store_discount_amount' => rand(0, 50),
