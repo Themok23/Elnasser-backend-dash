@@ -20,6 +20,10 @@ class UserSeeder extends Seeder
     {
         $this->command->info('Seeding customers...');
 
+        // Optional: seed customer interested modules into `users.module_ids` as JSON array.
+        // Example: SEED_MODULE_ID=3 php artisan db:seed --class=UserSeeder --force
+        $seedModuleId = (int) env('SEED_MODULE_ID', 0);
+
         // Create customers with different statuses and data completeness
         $customers = [
             // Complete customers with all data
@@ -184,6 +188,9 @@ class UserSeeder extends Seeder
                 $optionalFields = [];
                 if (Schema::hasColumn('users', 'sales_agent_ids')) {
                     $optionalFields['sales_agent_ids'] = '[]';
+                }
+                if ($seedModuleId > 0 && Schema::hasColumn('users', 'module_ids')) {
+                    $optionalFields['module_ids'] = json_encode([$seedModuleId]);
                 }
 
                 $customer = User::create(array_merge($customerData, $optionalFields, [
