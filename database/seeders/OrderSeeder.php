@@ -67,7 +67,7 @@ class OrderSeeder extends Seeder
         foreach ($usersWithCounts as $user) {
             $userOrderCount = (int) $user->order_count;
             $this->command->info("Creating {$userOrderCount} orders for user {$user->id}...");
-            
+
             // Reset user's order_count to 0, we'll recreate them
             $user->order_count = 0;
             $user->save();
@@ -127,13 +127,13 @@ class OrderSeeder extends Seeder
                 if (!empty($items)) {
                     $detailsCount = rand(1, min(5, count($items)));
                     $itemsForOrder = [];
-                    
+
                     if ($detailsCount == 1) {
                         $itemsForOrder = [array_rand($items)];
                     } else {
                         $itemsForOrder = array_rand($items, $detailsCount);
                     }
-                    
+
                     if (!is_array($itemsForOrder)) {
                         $itemsForOrder = [$itemsForOrder];
                     }
@@ -171,7 +171,7 @@ class OrderSeeder extends Seeder
             $actualOrderCount = Order::where('user_id', $user->id)->count();
             $user->order_count = $actualOrderCount;
             $user->save();
-            
+
             $this->command->info("Created {$actualOrderCount} orders for user {$user->id}");
         }
 

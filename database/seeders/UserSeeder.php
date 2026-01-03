@@ -7,6 +7,7 @@ use App\Models\User;
 use App\CentralLogics\Helpers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class UserSeeder extends Seeder
 {
@@ -179,7 +180,13 @@ class UserSeeder extends Seeder
             $existingCustomer = User::where('phone', $customerData['phone'])->first();
 
             if (!$existingCustomer) {
-                $customer = User::create(array_merge($customerData, [
+                // Some DBs have CHECK constraints requiring `users.sales_agent_ids` to be valid JSON (e.g. '[]').
+                $optionalFields = [];
+                if (Schema::hasColumn('users', 'sales_agent_ids')) {
+                    $optionalFields['sales_agent_ids'] = '[]';
+                }
+
+                $customer = User::create(array_merge($customerData, $optionalFields, [
                     'image' => 'def.png',
                     'login_medium' => 'manual',
                     'current_language_key' => 'en',
