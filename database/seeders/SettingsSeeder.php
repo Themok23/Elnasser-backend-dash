@@ -109,6 +109,10 @@ class SettingsSeeder extends Seeder
     {
         // Tier threshold settings
         $tierSettings = [
+            // Tier display names (default: Silver / Gold / Platinum)
+            ['key' => 'tier_bronze_name', 'value' => 'Silver'],
+            ['key' => 'tier_silver_name', 'value' => 'Gold'],
+            ['key' => 'tier_gold_name', 'value' => 'Platinum'],
             ['key' => 'tier_bronze_max_points', 'value' => '100'],
             ['key' => 'tier_silver_min_points', 'value' => '101'],
             ['key' => 'tier_silver_max_points', 'value' => '500'],

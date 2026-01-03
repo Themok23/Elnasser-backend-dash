@@ -192,12 +192,11 @@ class CustomerController extends Controller
         $data['discount_amount_type'] = data_get($discount_data, 'discount_amount_type');
         $data['validity'] = (string)data_get($discount_data, 'validity');
 
-        // Add tier information (manual tier override supported)
-        $tier = $user->effective_tier;
+        // Add tier information
+        $tier = $data->tier_level;
         $data['tier'] = $tier;
-        $data['tier_name'] = ucfirst($tier);
+        $data['tier_name'] = User::tierDisplayName($tier);
         $data['points_to_next_tier'] = self::calculatePointsToNextTier($data->loyalty_point ?? 0);
-        $data['tier_is_manual'] = (bool) ($user->tier_is_manual ?? false);
 
         // Add tier-specific point value multiplier
         $tierMultiplierKey = 'tier_' . $tier . '_multiplier';
@@ -231,6 +230,10 @@ class CustomerController extends Controller
         $silverMax = (int) (BusinessSetting::where('key', 'tier_silver_max_points')->first()->value ?? 500);
         $goldMin = (int) (BusinessSetting::where('key', 'tier_gold_min_points')->first()->value ?? 501);
 
+        $tier1Name = User::tierDisplayName('bronze'); // default: Silver
+        $tier2Name = User::tierDisplayName('silver'); // default: Gold
+        $tier3Name = User::tierDisplayName('gold');   // default: Platinum
+
         // Get tier multipliers
         $bronzeMultiplier = (float) (BusinessSetting::where('key', 'tier_bronze_multiplier')->first()->value ?? 1.0);
         $silverMultiplier = (float) (BusinessSetting::where('key', 'tier_silver_multiplier')->first()->value ?? 1.2);
@@ -250,33 +253,33 @@ class CustomerController extends Controller
         $tiers = [
             [
                 'tier' => 'bronze',
-                'tier_name' => 'Bronze',
+                'tier_name' => $tier1Name,
                 'min_points' => 0,
                 'max_points' => $bronzeMax,
                 'points_range' => "0 - {$bronzeMax}",
                 'multiplier' => $bronzeMultiplier,
                 'effective_point_value' => $calculateEffectiveValue($bronzeMultiplier),
-                'description' => "Points from 0 to {$bronzeMax}",
+                'description' => "{$tier1Name}: Points from 0 to {$bronzeMax}",
             ],
             [
                 'tier' => 'silver',
-                'tier_name' => 'Silver',
+                'tier_name' => $tier2Name,
                 'min_points' => $silverMin,
                 'max_points' => $silverMax,
                 'points_range' => "{$silverMin} - {$silverMax}",
                 'multiplier' => $silverMultiplier,
                 'effective_point_value' => $calculateEffectiveValue($silverMultiplier),
-                'description' => "Points from {$silverMin} to {$silverMax}",
+                'description' => "{$tier2Name}: Points from {$silverMin} to {$silverMax}",
             ],
             [
                 'tier' => 'gold',
-                'tier_name' => 'Gold',
+                'tier_name' => $tier3Name,
                 'min_points' => $goldMin,
                 'max_points' => null, // No upper limit
                 'points_range' => "{$goldMin}+",
                 'multiplier' => $goldMultiplier,
                 'effective_point_value' => $calculateEffectiveValue($goldMultiplier),
-                'description' => "Points from {$goldMin} and above",
+                'description' => "{$tier3Name}: Points from {$goldMin} and above",
             ],
         ];
 

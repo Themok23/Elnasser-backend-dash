@@ -9,8 +9,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'tier_is_manual')) {
-                $table->boolean('tier_is_manual')->default(false)->after('tier');
+            if (Schema::hasColumn('users', 'tier_is_manual')) {
+                $table->dropColumn('tier_is_manual');
             }
         });
     }
@@ -18,8 +18,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (Schema::hasColumn('users', 'tier_is_manual')) {
-                $table->dropColumn('tier_is_manual');
+            if (!Schema::hasColumn('users', 'tier_is_manual')) {
+                $table->boolean('tier_is_manual')->default(false)->after('tier');
             }
         });
     }
