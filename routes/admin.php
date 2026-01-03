@@ -736,6 +736,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
                 Route::get('list', 'CustomerController@customer_list')->name('list');
                 Route::get('rental-view/{user_id}', 'CustomerController@rentalView')->name('rental.view');
                 Route::get('view/{user_id}', 'CustomerController@view')->name('view');
+                Route::post('tier/{user_id}', 'CustomerController@update_tier')->name('tier.update');
                 Route::post('search', 'CustomerController@search')->name('search');
                 Route::get('status/{customer}/{status}file-manager', 'CustomerController@status')->name('status');
             });
