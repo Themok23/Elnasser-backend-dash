@@ -17,21 +17,31 @@ class SecureOrderSeeder extends Seeder
             }
         }
 
-        $moduleId = DB::table('modules')->value('id');
+        // Allow forcing a specific module id (useful when admin UI is scoped to ?module_id=...).
+        // Example: SEED_MODULE_ID=3 php artisan db:seed --class=SecureOrderSeeder --force
+        $forcedModuleId = (int) env('SEED_MODULE_ID', 0);
+        $moduleId = $forcedModuleId > 0
+            ? DB::table('modules')->where('id', $forcedModuleId)->value('id')
+            : DB::table('modules')->value('id');
         if (!$moduleId) {
             $this->command?->warn('No module found in modules table.');
             return;
         }
 
         $userIds = DB::table('users')->pluck('id')->toArray();
-        $stores = DB::table('stores')->select('id', 'zone_id')->get()->toArray();
+        // Try to seed orders against stores in the selected module (if the stores table has module_id).
+        $storesQuery = DB::table('stores')->select('id', 'zone_id');
+        if (Schema::hasColumn('stores', 'module_id')) {
+            $storesQuery->where('module_id', $moduleId);
+        }
+        $stores = $storesQuery->get()->toArray();
 
         if (empty($userIds)) {
             $this->command?->warn('No users found. Run UserSeeder first.');
             return;
         }
         if (empty($stores)) {
-            $this->command?->warn('No stores found. Seed stores first.');
+            $this->command?->warn("No stores found for module_id={$moduleId}. Seed stores first (and ensure they are assigned to this module).");
             return;
         }
 
