@@ -182,11 +182,48 @@
                             </h5>
                         </div>
                         <div class="card-body">
+                            <!-- Tier Names -->
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_bronze_name">
+                                            Tier 1 Name
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="text" class="form-control" name="tier_bronze_name" maxlength="30"
+                                            value="{{ $data['tier_bronze_name'] ?? 'Silver' }}" required>
+                                        <small class="text-muted">This replaces the old “Bronze” label across the dashboard and APIs.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_silver_name">
+                                            Tier 2 Name
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="text" class="form-control" name="tier_silver_name" maxlength="30"
+                                            value="{{ $data['tier_silver_name'] ?? 'Gold' }}" required>
+                                        <small class="text-muted">This replaces the old “Silver” label.</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 col-sm-6">
+                                    <div class="form-group mb-0">
+                                        <label class="input-label" for="tier_gold_name">
+                                            Tier 3 Name
+                                            <small class="text-danger">*</small>
+                                        </label>
+                                        <input type="text" class="form-control" name="tier_gold_name" maxlength="30"
+                                            value="{{ $data['tier_gold_name'] ?? 'Platinum' }}" required>
+                                        <small class="text-muted">This replaces the old “Gold” label.</small>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div class="row g-3">
                                 <div class="col-md-3 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_bronze_max_points">
-                                            {{ translate('messages.Bronze Max Points') }}
+                                            {{ ($data['tier_bronze_name'] ?? 'Silver') }} Max Points
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_bronze_max_points" min="0"
@@ -197,7 +234,7 @@
                                 <div class="col-md-3 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_silver_min_points">
-                                            {{ translate('messages.Silver Min Points') }}
+                                            {{ ($data['tier_silver_name'] ?? 'Gold') }} Min Points
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_silver_min_points" min="0"
@@ -207,7 +244,7 @@
                                 <div class="col-md-3 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_silver_max_points">
-                                            {{ translate('messages.Silver Max Points') }}
+                                            {{ ($data['tier_silver_name'] ?? 'Gold') }} Max Points
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_silver_max_points" min="0"
@@ -218,7 +255,7 @@
                                 <div class="col-md-3 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_gold_min_points">
-                                            {{ translate('messages.Gold Min Points') }}
+                                            {{ ($data['tier_gold_name'] ?? 'Platinum') }} Min Points
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_gold_min_points" min="0"
@@ -237,7 +274,7 @@
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_bronze_multiplier">
-                                            {{ translate('messages.Bronze Tier Multiplier') }}
+                                            {{ ($data['tier_bronze_name'] ?? 'Silver') }} Tier Multiplier
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_bronze_multiplier" min="0" step="0.01"
@@ -248,7 +285,7 @@
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_silver_multiplier">
-                                            {{ translate('messages.Silver Tier Multiplier') }}
+                                            {{ ($data['tier_silver_name'] ?? 'Gold') }} Tier Multiplier
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_silver_multiplier" min="0" step="0.01"
@@ -259,7 +296,7 @@
                                 <div class="col-md-4 col-sm-6">
                                     <div class="form-group mb-0">
                                         <label class="input-label" for="tier_gold_multiplier">
-                                            {{ translate('messages.Gold Tier Multiplier') }}
+                                            {{ ($data['tier_gold_name'] ?? 'Platinum') }} Tier Multiplier
                                             <small class="text-danger">*</small>
                                         </label>
                                         <input type="number" class="form-control" name="tier_gold_multiplier" min="0" step="0.01"

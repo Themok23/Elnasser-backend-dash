@@ -88,26 +88,7 @@
                                 </div>
                             </div>
 
-                            <div class="col-sm-6">
-                                <label class="input-label" for="tier_is_manual">
-                                    {{ translate('messages.customer_tier_settings') }}
-                                </label>
-                                <div class="d-flex align-items-center gap-3">
-                                    <label class="mb-0 d-flex align-items-center gap-2">
-                                        <input type="checkbox" name="tier_is_manual" id="tier_is_manual" value="1" {{ old('tier_is_manual') ? 'checked' : '' }}>
-                                        <span>{{ translate('messages.manual') ?? 'Manual' }}</span>
-                                    </label>
-                                    <select name="tier" id="tier" class="form-control" style="max-width: 220px;">
-                                        <option value="bronze" {{ old('tier','bronze') === 'bronze' ? 'selected' : '' }}>Bronze</option>
-                                        <option value="silver" {{ old('tier') === 'silver' ? 'selected' : '' }}>Silver</option>
-                                        <option value="gold" {{ old('tier') === 'gold' ? 'selected' : '' }}>Gold</option>
-                                    </select>
-                                </div>
-                                <small class="text-muted d-block mt-1">If manual is off, tier is calculated from loyalty points.</small>
-                                @error('tier')
-                                    <div class="text-danger">{{ $message }}</div>
-                                @enderror
-                            </div>
+                            {{-- Tier is calculated automatically from loyalty points; not editable per-customer --}}
                         </div>
                     </div>
                     <div class="col-md-4">

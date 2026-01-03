@@ -52,7 +52,6 @@ class User extends Authenticatable
         'loyalty_point' => 'integer',
         'ref_by' => 'integer',
         'tier' => 'string',
-        'tier_is_manual' => 'boolean',
     ];
     protected $appends = ['image_full_url', 'tier_level'];
     public function getImageFullUrlAttribute(){
@@ -100,10 +99,6 @@ class User extends Authenticatable
      */
     public function updateTier()
     {
-        // If admin manually set the tier, do not auto-recalculate.
-        if ($this->tier_is_manual) {
-            return;
-        }
         $newTier = $this->tier_level;
         if ($this->tier !== $newTier) {
             $this->tier = $newTier;
@@ -113,16 +108,36 @@ class User extends Authenticatable
     }
 
     /**
-     * Effective tier used by APIs: manual tier (if enabled) otherwise computed tier level.
-     * Not appended to JSON by default (used internally).
+     * Display name for a given tier key (bronze/silver/gold).
+     * Tier display names are configurable in business settings:
+     * - tier_bronze_name (default: Silver)
+     * - tier_silver_name (default: Gold)
+     * - tier_gold_name   (default: Platinum)
      */
-    public function getEffectiveTierAttribute(): string
+    public static function tierDisplayName(?string $tier): string
     {
-        if ($this->tier_is_manual && in_array($this->tier, ['bronze', 'silver', 'gold'], true)) {
-            return $this->tier;
+        $tier = $tier ?: 'bronze';
+
+        $map = [
+            'bronze' => 'tier_bronze_name',
+            'silver' => 'tier_silver_name',
+            'gold' => 'tier_gold_name',
+        ];
+        $key = $map[$tier] ?? null;
+        if (!$key) {
+            return ucfirst($tier);
         }
 
-        return $this->tier_level ?? 'bronze';
+        $setting = BusinessSetting::where('key', $key)->first();
+        $fallback = match ($tier) {
+            'bronze' => 'Silver',
+            'silver' => 'Gold',
+            'gold' => 'Platinum',
+            default => ucfirst($tier),
+        };
+
+        $value = trim((string) ($setting?->value ?? ''));
+        return $value !== '' ? $value : $fallback;
     }
 
     public function scopeOfStatus($query, $status): void

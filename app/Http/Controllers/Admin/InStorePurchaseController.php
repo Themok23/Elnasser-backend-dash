@@ -317,7 +317,7 @@ class InStorePurchaseController extends Controller
                 'ref_code' => $customer->ref_code,
                 'current_points' => $customer->loyalty_point ?? 0,
                 'current_tier' => $customer->tier_level ?? 'bronze',
-                'tier_name' => ucfirst($customer->tier_level ?? 'bronze'),
+                'tier_name' => \App\Models\User::tierDisplayName($customer->tier_level ?? 'bronze'),
                 'd365_contact_id' => $customerData['d365_contact_id'] ?? null,
             ]
         ], 200);

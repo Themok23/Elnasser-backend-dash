@@ -23,7 +23,6 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\SubscriberListExport;
 use Modules\Rental\Entities\Trips;
 use Modules\Rental\Exports\TripExport;
-use Illuminate\Validation\Rule;
 
 class CustomerController extends Controller
 {
@@ -461,6 +460,9 @@ class CustomerController extends Controller
             'add_fund_bonus'=>'nullable|numeric|max:100|min:0',
             'loyalty_point_exchange_rate'=>'nullable|numeric',
             'ref_earning_exchange_rate'=>'nullable|numeric',
+            'tier_bronze_name' => 'required|string|max:30',
+            'tier_silver_name' => 'required|string|max:30',
+            'tier_gold_name' => 'required|string|max:30',
         ]);
         Helpers::businessUpdateOrInsert(['key' => 'customer_verification'], [
             'value' => $request['customer_verification_status']??0
@@ -507,6 +509,17 @@ class CustomerController extends Controller
         ]);
         Helpers::businessUpdateOrInsert(['key' => 'new_customer_discount_validity_type'], [
             'value' => $request['new_customer_discount_validity_type']??'day'
+        ]);
+
+        // Tier display names (Silver / Gold / Platinum)
+        Helpers::businessUpdateOrInsert(['key' => 'tier_bronze_name'], [
+            'value' => $request['tier_bronze_name'] ?? 'Silver'
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_silver_name'], [
+            'value' => $request['tier_silver_name'] ?? 'Gold'
+        ]);
+        Helpers::businessUpdateOrInsert(['key' => 'tier_gold_name'], [
+            'value' => $request['tier_gold_name'] ?? 'Platinum'
         ]);
 
         // Save tier threshold settings
@@ -678,8 +691,6 @@ class CustomerController extends Controller
             'password' => ['required', Password::min(8)->mixedCase()->letters()->numbers()->symbols()],
             'zone_id' => 'nullable|exists:zones,id',
             'image' => 'nullable|image|max:2048|mimes:' . IMAGE_FORMAT_FOR_VALIDATION,
-            'tier_is_manual' => 'nullable|in:0,1',
-            'tier' => ['nullable', Rule::in(['bronze', 'silver', 'gold'])],
         ], [
             'f_name.required' => translate('messages.first_name_is_required'),
             'phone.required' => translate('messages.phone_is_required'),
@@ -707,10 +718,6 @@ class CustomerController extends Controller
             $user->status = 1;
             $user->is_phone_verified = 1;
             $user->login_medium = 'manual';
-            $user->tier_is_manual = (bool) ($request->tier_is_manual ?? false);
-            if ($user->tier_is_manual) {
-                $user->tier = $request->tier ?? 'bronze';
-            }
 
             if ($request->hasFile('image')) {
                 $user->image = Helpers::upload('profile/', 'png', $request->file('image'));
@@ -719,7 +726,6 @@ class CustomerController extends Controller
             }
 
             $user->save();
-            // If not manual, ensure tier is consistent with current points/thresholds.
             $user->updateTier();
             $user->ref_code = Helpers::generate_referer_code($user);
             $user->save();
@@ -730,47 +736,5 @@ class CustomerController extends Controller
             Toastr::error(translate('messages.failed_to_create_customer'));
             return $this->backWithInput($validator);
         }
-    }
-
-    /**
-     * Update a customer's tier from admin UI.
-     * - If tier_is_manual=1: save tier + lock it.
-     * - If tier_is_manual=0: unlock and recalculate from points.
-     */
-    public function update_tier(Request $request, $user_id)
-    {
-        if (env('APP_MODE') == 'demo') {
-            Toastr::info(translate('messages.update_option_is_disable_for_demo'));
-            return back();
-        }
-
-        $validator = Validator::make($request->all(), [
-            'tier_is_manual' => 'required|in:0,1',
-            'tier' => ['nullable', Rule::in(['bronze', 'silver', 'gold'])],
-        ]);
-
-        if ($validator->fails()) {
-            return back()->withErrors($validator)->withInput();
-        }
-
-        $customer = User::find($user_id);
-        if (!$customer) {
-            Toastr::error(translate('messages.customer_not_found'));
-            return back();
-        }
-
-        $isManual = (bool) ((int) $request->tier_is_manual);
-        if ($isManual) {
-            $customer->tier_is_manual = true;
-            $customer->tier = $request->tier ?? 'bronze';
-            $customer->save();
-        } else {
-            $customer->tier_is_manual = false;
-            $customer->save();
-            $customer->updateTier();
-        }
-
-        Toastr::success(translate('messages.updated_successfully'));
-        return back();
     }
 }
