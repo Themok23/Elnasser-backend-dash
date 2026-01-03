@@ -380,6 +380,13 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
                 Route::get('transactions', 'LoyaltyPointController@transactions');
             });
 
+            // Missions (global for all users)
+            Route::group(['prefix' => 'missions'], function () {
+                Route::get('/', 'MissionController@index');
+                Route::post('{missionId}/submit', 'MissionController@submit');
+                Route::get('my-submissions', 'MissionController@mySubmissions');
+            });
+
             Route::group(['prefix'=>'wallet'], function() {
                 Route::get('transactions', 'WalletController@transactions');
                 Route::get('bonuses', 'WalletController@get_bonus');

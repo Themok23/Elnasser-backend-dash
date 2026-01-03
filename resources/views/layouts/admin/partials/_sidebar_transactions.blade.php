@@ -49,6 +49,28 @@
                     </div>
                 </form>
                 <ul class="navbar-nav navbar-nav-lg nav-tabs">
+                    <!-- Missions -->
+                    <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/missions*') ? 'active' : '' }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="Missions">
+                            <i class="tio-checklist nav-icon"></i>
+                            <span class="text-truncate">Missions</span>
+                        </a>
+                        <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display:{{ Request::is('admin/missions*') ? 'block' : 'none' }}">
+                            <li class="navbar-vertical-aside-has-menu {{ (Request::is('admin/missions') || Request::is('admin/missions/create') || Request::is('admin/missions/*/edit')) ? 'active' : '' }}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.missions.index') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">Missions</span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/missions/submissions*') ? 'active' : '' }}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.missions.submissions.index') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">Submissions</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <!-- Business Section-->
                     <li class="nav-item">
                         <small class="nav-subtitle"

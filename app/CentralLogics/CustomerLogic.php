@@ -114,6 +114,9 @@ class CustomerLogic
         } else if ($transaction_type == 'in_store_points_redeemed') {
             // For in-store purchase redemption - deduct points without adding to wallet
             $debit = (int)$amount;
+        } else if ($transaction_type == 'mission_reward') {
+            // For mission rewards - points are awarded after admin approval
+            $credit = (int)$amount;
         }
 
         $current_balance = $user->loyalty_point + $credit - $debit;
