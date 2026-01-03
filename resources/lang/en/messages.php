@@ -8912,4 +8912,6 @@ Smartly or Earn. ',
   'user_already_complete' => 'User already complete',
   'The password must be a string.' => 'The password must be a string.',
   'Email already exists' => 'Email already exists',
+  'Phone must be valid' => 'Phone must be valid',
+  'cart_empty_warning' => 'Cart empty warning',
 );
