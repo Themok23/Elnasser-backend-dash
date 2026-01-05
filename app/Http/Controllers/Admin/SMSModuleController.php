@@ -26,7 +26,7 @@ class SMSModuleController extends Controller
                 }
             }
         }
-        $data_values=  Setting::where('settings_type','sms_config')->whereIn('key_name', ['twilio','nexmo','2factor','msg91','alphanet_sms'])->get() ?? [];
+        $data_values=  Setting::where('settings_type','sms_config')->whereIn('key_name', ['twilio','nexmo','2factor','msg91','alphanet_sms','victorylink'])->get() ?? [];
         return view('admin-views.business-settings.sms-index',compact('data_values','published_status','payment_url'));
     }
 
@@ -82,6 +82,19 @@ class SMSModuleController extends Controller
                 'sender_id' =>$request['sender_id'] ?? null,
                 'otp_template' =>$request['otp_template'],
             ];
+        } elseif ($module == 'victorylink') {
+            $additional_data = [
+                'status' => $request['status'],
+                'username' => $request['username'],
+                'password' => $request['password'],
+                'sender' => $request['sender'] ?? null,
+                'lang' => $request['lang'] ?? 'E',
+                'otp_template' => $request['otp_template'] ?? 'Your OTP is: #OTP#',
+                'phone_prefix' => $request['phone_prefix'] ?? null,
+                'use_dlr' => $request['use_dlr'] ?? 0,
+                'dlr_url' => $request['dlr_url'] ?? null,
+                'base_url' => $request['base_url'] ?? 'https://smsvas.vlserv.com',
+            ];
         }
 
         $data= ['gateway' => $module ,
@@ -99,7 +112,7 @@ class SMSModuleController extends Controller
     ]);
 
     if ($request['status'] == 1) {
-        foreach (['twilio','nexmo','2factor','msg91','alphanet_sms'] as $gateway) {
+        foreach (['twilio','nexmo','2factor','msg91','alphanet_sms','victorylink'] as $gateway) {
             if ($module != $gateway) {
                 $keep = Setting::where(['key_name' => $gateway, 'settings_type' => 'sms_config'])->first();
                 if (isset($keep)) {

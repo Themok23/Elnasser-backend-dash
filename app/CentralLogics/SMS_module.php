@@ -3,6 +3,7 @@
 namespace App\CentralLogics;
 
 use Illuminate\Support\Facades\DB;
+use App\Services\VictoryLinkSmsService;
 use Twilio\Rest\Client;
 
 class SMS_module
@@ -31,6 +32,11 @@ class SMS_module
         $config = self::get_settings('alphanet_sms');
         if (isset($config) && $config['status'] == 1) {
             return self::alphanet_sms($receiver, $otp);
+        }
+
+        $config = self::get_settings('victorylink');
+        if (isset($config) && ($config['status'] ?? 0) == 1) {
+            return self::victorylink($receiver, $otp);
         }
 
         return 'not_found';
@@ -239,6 +245,25 @@ class SMS_module
                 $response = 'error';
             }
         }
+        return $response;
+    }
+
+    public static function victorylink($receiver, $otp): string
+    {
+        $config = self::get_settings('victorylink');
+        $response = 'error';
+
+        if (isset($config) && ($config['status'] ?? 0) == 1) {
+            try {
+                $otpTemplate = (string)($config['otp_template'] ?? 'Your OTP is: #OTP#');
+                $service = new VictoryLinkSmsService($config);
+                $result = $service->sendOtp((string)$receiver, (string)$otp, $otpTemplate);
+                $response = ($result['ok'] ?? false) ? 'success' : 'error';
+            } catch (\Throwable) {
+                $response = 'error';
+            }
+        }
+
         return $response;
     }
 

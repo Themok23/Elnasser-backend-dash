@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function () {
+    Route::get('sms/victorylink/receive-dlr', 'Sms\VictoryLinkDlrController@receive');
+
     Route::group(['prefix' => 'configurations'], function () {
         Route::get('/', 'ExternalConfigurationController@getConfiguration');
         Route::get('/get-external', 'ExternalConfigurationController@getExternalConfiguration');

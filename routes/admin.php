@@ -495,6 +495,10 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::group(['prefix' => 'third-party', 'as' => 'third-party.'], function () {
                 Route::get('sms-module', 'SMSModuleController@sms_index')->name('sms-module');
                 Route::post('sms-module-update/{sms_module}', 'SMSModuleController@sms_update')->name('sms-module-update');
+                Route::get('victorylink-sms', 'VictoryLinkSmsController@index')->name('victorylink-sms');
+                Route::post('victorylink-sms/send', 'VictoryLinkSmsController@send')->name('victorylink-sms.send');
+                Route::post('victorylink-sms/check-credit', 'VictoryLinkSmsController@checkCredit')->name('victorylink-sms.check-credit');
+                Route::post('victorylink-sms/check-dlr', 'VictoryLinkSmsController@checkDlrStatus')->name('victorylink-sms.check-dlr');
                 Route::get('payment-method', 'BusinessSettingsController@payment_index')->name('payment-method');
                 // Route::post('payment-method-update/{payment_method}', 'BusinessSettingsController@payment_update')->name('payment-method-update');
                 Route::post('payment-method-update', 'BusinessSettingsController@payment_config_update')->name('payment-method-update');

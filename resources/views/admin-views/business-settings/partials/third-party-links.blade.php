@@ -9,6 +9,9 @@
                 <a class="nav-link {{ Request::is('admin/business-settings/third-party/sms-module') ? 'active' : '' }}" href="{{ route('admin.business-settings.third-party.sms-module') }}"  aria-disabled="true">{{translate('SMS Module')}}</a>
             </li>
             <li class="nav-item">
+                <a class="nav-link {{ Request::is('admin/business-settings/third-party/victorylink-sms*') ? 'active' : '' }}" href="{{ route('admin.business-settings.third-party.victorylink-sms') }}"  aria-disabled="true">VictoryLink SMS</a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link {{ Request::is('admin/business-settings/third-party/mail-config') || Request::is('admin/business-settings/third-party/test-mail')  ? 'active' : '' }}" href="{{ route('admin.business-settings.third-party.mail-config') }}"  aria-disabled="true">{{translate('Mail Config')}}</a>
             </li>
             <li class="nav-item">
