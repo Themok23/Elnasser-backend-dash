@@ -119,3 +119,4 @@ class SyncLoyaltyPointsToD365Job implements ShouldQueue
 
 
 
+
