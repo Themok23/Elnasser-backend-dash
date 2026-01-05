@@ -1357,7 +1357,7 @@ class BusinessSettingsController extends Controller
                 $app_url_ios = BusinessSetting::where(['key' => 'app_url_ios'])->first()?->value;
 
                 $response = Http::post($driveMondBaseUrl->value . '/api/store-configurations', [
-                    'mart_business_name' => $name->value ?? '6amMart',
+                    'mart_business_name' => $name->value ?? 'ALNASSER',
                     'mart_business_logo' => \App\CentralLogics\Helpers::get_full_url('business', $logo?->value ?? '', $logo?->storage[0]?->value ?? 'public', 'favicon') ?? asset('public/assets/admin/img/160x160/img2.jpg'),
                     'mart_app_minimum_version_android' => $app_minimum_version_android,
                     'mart_app_url_android' => $app_url_android,

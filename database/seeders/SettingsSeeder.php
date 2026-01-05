@@ -49,7 +49,7 @@ class SettingsSeeder extends Seeder
             ['key' => 'takeaway_status', 'value' => '1'],
             ['key' => 'country_picker_status', 'value' => '1'],
             ['key' => 'manual_login_status', 'value' => '1'],
-            ['key' => 'business_name', 'value' => '6amMart'],
+            ['key' => 'business_name', 'value' => 'ALNASSER'],
         ];
 
         foreach ($businessSettings as $setting) {

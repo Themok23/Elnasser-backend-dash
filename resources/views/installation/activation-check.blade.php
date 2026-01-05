@@ -1,6 +1,6 @@
 @extends('layouts.blank')
 
-@section('title', "6amMart Software Activation Check")
+@section('title', "ALNASSER Software Activation Check")
 
 @section('content')
     <div class="main-content">
@@ -8,7 +8,7 @@
             <div class="card mt-3">
                 <div class="card-body">
                     <div class="mar-ver pad-btm text-center mb-4">
-                        <h1 class="h3">{{ "6amMart Software Activation Check" }}</h1>
+                        <h1 class="h3">{{ "ALNASSER Software Activation Check" }}</h1>
                     </div>
 
                     <form method="POST" action="{{ route('system.activation-check') }}">

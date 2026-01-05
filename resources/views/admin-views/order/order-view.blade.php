@@ -582,8 +582,8 @@
                                                                                     <span
                                                                                         class="d-block text-capitalize">
                                                                                             &nbsp; &nbsp;
-                                                                                            {{ $value['label'] }} :
-                                                                                            <strong>{{ \App\CentralLogics\Helpers::format_currency($value['optionPrice']) }}</strong>
+                                                                                            {{ data_get($value, 'label', '-') }} :
+                                                                                            <strong>{{ \App\CentralLogics\Helpers::format_currency((float) data_get($value, 'optionPrice', 0)) }}</strong>
                                                                                         </span>
                                                                                 @endforeach
                                                                             @else
