@@ -14,6 +14,58 @@
             @include('admin-views.business-settings.partials.third-party-links')
         </div>
 
+        <div class="row g-3 mb-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="mb-0">Gateway Status</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{{ route('admin.business-settings.third-party.sms-module-update', ['victorylink']) }}">
+                            @csrf
+                            @method('post')
+
+                            <div class="d-flex align-items-center gap-4 gap-xl-5 mb-3">
+                                <div class="custom-radio">
+                                    <input type="radio" id="victorylink-active" name="status" value="1"
+                                        {{ (int)($config['status'] ?? 0) === 1 ? 'checked' : '' }}>
+                                    <label for="victorylink-active">Active</label>
+                                </div>
+                                <div class="custom-radio">
+                                    <input type="radio" id="victorylink-inactive" name="status" value="0"
+                                        {{ (int)($config['status'] ?? 0) === 1 ? '' : 'checked' }}>
+                                    <label for="victorylink-inactive">Inactive</label>
+                                </div>
+                            </div>
+
+                            {{-- Keep existing saved config when toggling status --}}
+                            <input type="hidden" name="gateway" value="victorylink">
+                            <input type="hidden" name="mode" value="live">
+                            <input type="hidden" name="username" value="{{ $config['username'] ?? '' }}">
+                            <input type="hidden" name="password" value="{{ $config['password'] ?? '' }}">
+                            <input type="hidden" name="sender" value="{{ $config['sender'] ?? '' }}">
+                            <input type="hidden" name="lang" value="{{ $config['lang'] ?? 'E' }}">
+                            <input type="hidden" name="otp_template" value="{{ $config['otp_template'] ?? 'Your OTP is: #OTP#' }}">
+                            <input type="hidden" name="phone_prefix" value="{{ $config['phone_prefix'] ?? '' }}">
+                            <input type="hidden" name="use_dlr" value="{{ $config['use_dlr'] ?? 0 }}">
+                            <input type="hidden" name="dlr_url" value="{{ $config['dlr_url'] ?? '' }}">
+                            <input type="hidden" name="base_url" value="{{ $config['base_url'] ?? 'https://smsvas.vlserv.com' }}">
+
+                            @if(empty($config['username'] ?? null) || empty($config['password'] ?? null))
+                                <div class="alert alert-warning mb-3">
+                                    Please fill <strong>username</strong> and <strong>password</strong> in
+                                    <a href="{{ route('admin.business-settings.third-party.sms-module') }}"><strong>SMS Module → victorylink</strong></a>
+                                    before activating, otherwise sending will fail.
+                                </div>
+                            @endif
+
+                            <button class="btn btn--primary" type="submit">Update Status</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="row g-3">
             <div class="col-lg-6">
                 <div class="card">
