@@ -5507,4 +5507,10 @@
   'The email must be a valid email address.' => 'The email must be a valid email address.',
   'no_fields_to_update' => 'No fields to update',
   'The name may not be greater than 200 characters.' => 'The name may not be greater than 200 characters.',
+  'User_credential_does_not_match' => 'User credential does not match',
+  'Password_successfully_updated' => 'Password successfully updated',
+  'Otp_Successfully_Sent_To_Your_Phone' => 'Otp Successfully Sent To Your Phone',
+  'user_not_found!' => 'User not found!',
+  'profile_successfully_updated' => 'Profile successfully updated',
+  'Phone must be valid' => 'Phone must be valid',
 );
