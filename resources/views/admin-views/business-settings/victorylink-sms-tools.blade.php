@@ -18,7 +18,7 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header">
-                        <h4 class="mb-0">Gateway Status</h4>
+                        <h4 class="mb-0">Gateway Setup (Credentials + Status)</h4>
                     </div>
                     <div class="card-body">
                         <form method="POST" action="{{ route('admin.business-settings.third-party.sms-module-update', ['victorylink']) }}">
@@ -38,26 +38,59 @@
                                 </div>
                             </div>
 
-                            {{-- Keep existing saved config when toggling status --}}
                             <input type="hidden" name="gateway" value="victorylink">
                             <input type="hidden" name="mode" value="live">
-                            <input type="hidden" name="username" value="{{ $config['username'] ?? '' }}">
-                            <input type="hidden" name="password" value="{{ $config['password'] ?? '' }}">
-                            <input type="hidden" name="sender" value="{{ $config['sender'] ?? '' }}">
-                            <input type="hidden" name="lang" value="{{ $config['lang'] ?? 'E' }}">
-                            <input type="hidden" name="otp_template" value="{{ $config['otp_template'] ?? 'Your OTP is: #OTP#' }}">
-                            <input type="hidden" name="phone_prefix" value="{{ $config['phone_prefix'] ?? '' }}">
-                            <input type="hidden" name="use_dlr" value="{{ $config['use_dlr'] ?? 0 }}">
-                            <input type="hidden" name="dlr_url" value="{{ $config['dlr_url'] ?? '' }}">
-                            <input type="hidden" name="base_url" value="{{ $config['base_url'] ?? 'https://smsvas.vlserv.com' }}">
 
-                            @if(empty($config['username'] ?? null) || empty($config['password'] ?? null))
-                                <div class="alert alert-warning mb-3">
-                                    Please fill <strong>username</strong> and <strong>password</strong> in
-                                    <a href="{{ route('admin.business-settings.third-party.sms-module') }}"><strong>SMS Module → victorylink</strong></a>
-                                    before activating, otherwise sending will fail.
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Username</label>
+                                    <input type="text" name="username" class="form-control" value="{{ old('username', $config['username'] ?? '') }}" required>
                                 </div>
-                            @endif
+                                <div class="col-md-6 form-group">
+                                    <label>Password</label>
+                                    <input type="text" name="password" class="form-control" value="{{ old('password', $config['password'] ?? '') }}" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Sender (Fake Sender)</label>
+                                    <input type="text" name="sender" class="form-control" value="{{ old('sender', $config['sender'] ?? '') }}">
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>Lang</label>
+                                    @php($lang = old('lang', $config['lang'] ?? 'E'))
+                                    <select name="lang" class="form-control">
+                                        <option value="E" {{ strtoupper($lang) == 'E' ? 'selected' : '' }}>E (English)</option>
+                                        <option value="A" {{ strtoupper($lang) == 'A' ? 'selected' : '' }}>A (Arabic)</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3 form-group">
+                                    <label>Phone Prefix (optional)</label>
+                                    <input type="text" name="phone_prefix" class="form-control" value="{{ old('phone_prefix', $config['phone_prefix'] ?? '') }}" placeholder="Example: 20">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>OTP Template</label>
+                                <input type="text" name="otp_template" class="form-control" value="{{ old('otp_template', $config['otp_template'] ?? 'Your OTP is: #OTP#') }}">
+                                <small class="text-muted">Use <span class="text-monospace">#OTP#</span> where the code should appear.</small>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 form-group">
+                                    <label>Base URL</label>
+                                    <input type="text" name="base_url" class="form-control" value="{{ old('base_url', $config['base_url'] ?? 'https://smsvas.vlserv.com') }}">
+                                </div>
+                                <div class="col-md-6 form-group">
+                                    <label>
+                                        <input type="checkbox" name="use_dlr" value="1" {{ old('use_dlr', (int)($config['use_dlr'] ?? 0)) ? 'checked' : '' }}>
+                                        Use DLR by default
+                                    </label>
+                                    <input type="text" name="dlr_url" class="form-control mt-2" value="{{ old('dlr_url', $config['dlr_url'] ?? $dlr_callback_url) }}" placeholder="DLR URL">
+                                    <small class="text-muted">Callback endpoint: <span class="text-monospace">{{ $dlr_callback_url }}</span></small>
+                                </div>
+                            </div>
 
                             <button class="btn btn--primary" type="submit">Update Status</button>
                         </form>
