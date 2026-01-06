@@ -16,6 +16,11 @@ use Illuminate\Support\Facades\Route;
 Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function () {
     Route::get('sms/victorylink/receive-dlr', 'Sms\VictoryLinkDlrController@receive');
 
+    // NStores branches scraper (protected by X-NSTORES-IMPORT-KEY)
+    Route::post('nstores/scrape', 'NStoresController@scrape');
+    // Nearest branch locator (mobile sends latitude/longitude)
+    Route::post('branches/nearest', 'BranchLocationController@nearest');
+
     Route::group(['prefix' => 'configurations'], function () {
         Route::get('/', 'ExternalConfigurationController@getConfiguration');
         Route::get('/get-external', 'ExternalConfigurationController@getExternalConfiguration');

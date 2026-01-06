@@ -30,4 +30,21 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | NStores (branch locations scraping)
+    |--------------------------------------------------------------------------
+    |
+    | Used to scrape branch pages from the NStores link and extract Google Maps
+    | latitude/longitude. The import endpoint is protected by a simple key.
+    |
+    */
+    'nstores' => [
+        'source_url' => env('NSTORES_SOURCE_URL', 'https://bit.ly/m/NStores'),
+        'import_key' => env('NSTORES_IMPORT_KEY'),
+        'timeout' => (int) env('NSTORES_HTTP_TIMEOUT', 25),
+        'verify_ssl' => (bool) env('NSTORES_HTTP_VERIFY_SSL', true),
+        'user_agent' => env('NSTORES_HTTP_USER_AGENT', 'ElnasserBackendDash/1.0 (+nstores scraper)'),
+    ],
+
 ];
