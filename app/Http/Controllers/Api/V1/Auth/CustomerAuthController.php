@@ -505,14 +505,22 @@ class CustomerAuthController extends Controller
     }
     public function register(Request $request)
     {
+        // Determine if password is required based on source
+        $isPosOrD365 = in_array($request->source, ['pos', 'd365']);
+        $passwordRules = $isPosOrD365 
+            ? ['nullable', Password::min(8)]  // Optional for POS/D365
+            : ['required', Password::min(8)]; // Required for mobile app
+
         $validator = Validator::make($request->all(), [
             'name' => 'required',
             'email' => 'unique:users',
             'phone' => 'required|unique:users',
-            'password' => ['required', Password::min(8)],
+            'password' => $passwordRules,
+            'source' => 'nullable|in:mobile_app,pos,d365',
 
         ], [
             'name.required' => translate('The name field is required.'),
+            'source.in' => translate('The source must be one of: mobile_app, pos, d365.'),
         ]);
 
         if ($validator->fails()) {
@@ -564,6 +572,9 @@ class CustomerAuthController extends Controller
                     $ref_by = $referar_user->id;
                 }
 
+                // Determine if this is a POS/D365 registration
+                $isPosOrD365 = in_array($request->source, ['pos', 'd365']);
+                
                 // Create user within transaction
                 $user = User::create([
                     'f_name' => $firstName,
@@ -571,7 +582,8 @@ class CustomerAuthController extends Controller
                     'email' => $request->email,
                     'phone' => $request->phone,
                     'ref_by' => $ref_by,
-                    'password' => bcrypt($request->password)
+                    'password' => $request->password ? bcrypt($request->password) : null, // Can be null for POS/D365
+                    'is_from_pos' => $isPosOrD365 ? 1 : 0,
                 ]);
 
                 // Generate ref_code if not exists
@@ -583,8 +595,12 @@ class CustomerAuthController extends Controller
                 // Refresh user to ensure relationships are loaded
                 $user->refresh();
 
-                // Generate token - if this fails, transaction will rollback
-                $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+                // Generate token only if user has password (complete registration)
+                // For POS/D365 users without password, they need to complete registration first
+                $token = null;
+                if (!empty($user->password)) {
+                    $token = $user->createToken('RestaurantCustomerAuth')->accessToken;
+                }
 
                 $login_settings = array_column(BusinessSetting::whereIn('key',['manual_login_status','otp_login_status','social_login_status','google_login_status','facebook_login_status','apple_login_status','email_verification_status','phone_verification_status'
                 ])->get(['key','value'])->toArray(), 'value', 'key');
@@ -667,12 +683,16 @@ class CustomerAuthController extends Controller
                 }
 
                 // If verification is not required, mark as verified automatically
-                // This ensures check_phone returns "exist" instead of "old" for newly registered users
-                if (!isset($login_settings['phone_verification_status']) || $login_settings['phone_verification_status'] != 1) {
-                    $user->is_phone_verified = 1;
-                }
-                if (!isset($login_settings['email_verification_status']) || $login_settings['email_verification_status'] != 1) {
-                    $user->is_email_verified = 1;
+                // For POS/D365 users without password, don't auto-verify (they need to complete registration)
+                // This ensures check_phone returns "old" (incomplete) for POS/D365 users without password
+                if (!empty($user->password)) {
+                    // Only auto-verify if user has password (complete registration)
+                    if (!isset($login_settings['phone_verification_status']) || $login_settings['phone_verification_status'] != 1) {
+                        $user->is_phone_verified = 1;
+                    }
+                    if (!isset($login_settings['email_verification_status']) || $login_settings['email_verification_status'] != 1) {
+                        $user->is_email_verified = 1;
+                    }
                 }
                 $user->save();
 
@@ -688,12 +708,16 @@ class CustomerAuthController extends Controller
                 }
 
                 // Sync customer to Dynamics 365 (non-critical, queued for reliability)
+                // Only sync if not coming from D365 (to avoid circular sync)
                 try {
-                    $dynamicsService = new \App\Services\Dynamics365Service();
-                    if ($dynamicsService->isEnabled()) {
-                        // Queue the sync job - if it fails, it will retry automatically
-                        // Data is preserved in queue, won't be lost
-                        $dynamicsService->createCustomerInD365($user, 'MobileApp', null, true);
+                    if ($request->source !== 'd365') {
+                        $dynamicsService = new \App\Services\Dynamics365Service();
+                        if ($dynamicsService->isEnabled()) {
+                            // Queue the sync job - if it fails, it will retry automatically
+                            // Data is preserved in queue, won't be lost
+                            $source = $request->source === 'pos' ? 'POS' : 'MobileApp';
+                            $dynamicsService->createCustomerInD365($user, $source, null, true);
+                        }
                     }
                 } catch(\Exception $ex) {
                     \Log::warning('Failed to queue D365 sync job on registration', [
@@ -709,8 +733,24 @@ class CustomerAuthController extends Controller
                     $user_email = $user->email;
                 }
 
+                // Determine if user is complete (has password and name)
+                $isPersonalInfo = !empty($user->f_name) && !empty($user->l_name);
+                $isComplete = $isPersonalInfo && !empty($user->password);
+
                 // If we reach here, everything succeeded - transaction will commit
-                return response()->json(['token' => $token, 'is_phone_verified'=>$phone, 'is_email_verified'=>$mail, 'is_personal_info' => 1, 'is_exist_user' =>null, 'login_type' => 'manual', 'email' => $user_email], 200);
+                return response()->json([
+                    'token' => $token, 
+                    'is_phone_verified' => $phone, 
+                    'is_email_verified' => $mail, 
+                    'is_personal_info' => $isPersonalInfo ? 1 : 0, 
+                    'is_exist_user' => null, 
+                    'login_type' => 'manual', 
+                    'email' => $user_email,
+                    'is_complete' => $isComplete,
+                    'message' => $isComplete 
+                        ? translate('messages.registration_successful') 
+                        : 'Registration successful. Customer can complete registration later via mobile app.'
+                ], 200);
             });
         } catch (\Exception $e) {
             // Transaction automatically rolled back - user was not created

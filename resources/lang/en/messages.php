@@ -8914,4 +8914,5 @@ Smartly or Earn. ',
   'Email already exists' => 'Email already exists',
   'Phone must be valid' => 'Phone must be valid',
   'cart_empty_warning' => 'Cart empty warning',
+  'The source must be one of: mobile_app, pos, d365.' => 'The source must be one of: mobile app, pos, d365.',
 );
