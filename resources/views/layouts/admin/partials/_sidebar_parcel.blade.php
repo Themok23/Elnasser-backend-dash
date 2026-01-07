@@ -84,6 +84,28 @@
                         </ul>
                     </li>
 
+                    <!-- Support Tickets -->
+                    <li class="navbar-vertical-aside-has-menu {{ (Request::is('admin/support-tickets*') || Request::is('admin/support-ticket-types*')) ? 'active' : '' }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="Support Tickets">
+                            <i class="tio-message nav-icon"></i>
+                            <span class="text-truncate">Support Tickets</span>
+                        </a>
+                        <ul class="js-navbar-vertical-aside-submenu nav nav-sub" style="display:{{ (Request::is('admin/support-tickets*') || Request::is('admin/support-ticket-types*')) ? 'block' : 'none' }}">
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/support-tickets*') ? 'active' : '' }}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.support-tickets.index') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">Tickets</span>
+                                </a>
+                            </li>
+                            <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/support-ticket-types*') ? 'active' : '' }}">
+                                <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.support-ticket-types.index') }}">
+                                    <span class="tio-circle nav-indicator-icon"></span>
+                                    <span class="text-truncate">Ticket Types</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
 
                     <!-- Orders -->
                     @if (\App\CentralLogics\Helpers::module_permission_check('order'))

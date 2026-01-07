@@ -11,6 +11,7 @@ class ScrapeNStoresBranches extends Command
 {
     protected $signature = 'nstores:scrape
         {--url= : Source list URL (default: services.nstores.source_url)}
+        {--from-json= : Read results from a local JSON file instead of scraping (path relative to project root)}
         {--limit=0 : Limit number of branches (0 = no limit)}
         {--timeout= : HTTP timeout seconds (default: services.nstores.timeout)}
         {--verify-ssl= : Verify SSL (default: services.nstores.verify_ssl)}
@@ -26,14 +27,34 @@ class ScrapeNStoresBranches extends Command
     public function handle(NStoresScraperService $scraper): int
     {
         $sourceUrl = (string) ($this->option('url') ?: config('services.nstores.source_url'));
+        $fromJson = (string) ($this->option('from-json') ?? '');
         $limit = (int) ($this->option('limit') ?? 0);
         $timeout = (int) ($this->option('timeout') ?: config('services.nstores.timeout', 25));
         $verifySsl = filter_var($this->option('verify-ssl') ?? config('services.nstores.verify_ssl', true), FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
         $verifySsl = $verifySsl ?? true;
         $userAgent = (string) config('services.nstores.user_agent');
 
-        $this->info("Scraping: {$sourceUrl}");
-        $results = $scraper->scrape($sourceUrl, $timeout, $verifySsl, $userAgent, $limit);
+        if ($fromJson !== '') {
+            $path = base_path($fromJson);
+            if (!File::exists($path)) {
+                $this->error("from-json file not found: {$path}");
+                return self::FAILURE;
+            }
+            $raw = File::get($path);
+            $decoded = json_decode($raw, true);
+            if (!is_array($decoded)) {
+                $this->error("from-json file is not valid JSON array: {$path}");
+                return self::FAILURE;
+            }
+            $results = $decoded;
+            if ($limit > 0) {
+                $results = array_slice($results, 0, $limit);
+            }
+            $this->info("Loaded results from JSON: {$path}");
+        } else {
+            $this->info("Scraping: {$sourceUrl}");
+            $results = $scraper->scrape($sourceUrl, $timeout, $verifySsl, $userAgent, $limit);
+        }
 
         $found = count($results);
         $withCoords = count(array_filter($results, fn ($r) => $r['latitude'] !== null && $r['longitude'] !== null));
@@ -84,12 +105,14 @@ class ScrapeNStoresBranches extends Command
             } else {
                 $synced = 0;
                 foreach ($results as $row) {
-                    $sourceKey = null;
+                    // Use a stable, short key to avoid MySQL index/length issues.
+                    $keySource = null;
                     if (!empty($row['page_url']) && is_string($row['page_url'])) {
-                        $sourceKey = (string) parse_url($row['page_url'], PHP_URL_PATH);
+                        $keySource = $row['page_url'];
+                    } elseif (!empty($row['name']) && is_string($row['name'])) {
+                        $keySource = $row['name'];
                     }
-                    // Prefer using the branch bitlink keyword if present in page_url (fallback handled by unique index)
-                    $sourceKey = $sourceKey ?: ($row['name'] ?? null);
+                    $sourceKey = $keySource ? hash('sha256', $keySource) : null;
 
                     if (!$sourceKey) {
                         continue;

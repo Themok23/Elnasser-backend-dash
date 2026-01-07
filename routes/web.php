@@ -58,6 +58,23 @@ Route::post('verify-otp', 'LoginController@verify_token')->name('verify-otp');
 Route::post('reset-password-submit', 'LoginController@reset_password_submit')->name('reset-password-submit');
 Route::get('otp-resent', 'LoginController@otp_resent')->name('otp_resent');
 
+// Support Tickets (public wizard)
+Route::group(['prefix' => 'support/tickets', 'as' => 'support-tickets.'], function () {
+    Route::get('/', [\App\Http\Controllers\SupportTicketWebController::class, 'step1'])->name('step1');
+    Route::post('/', [\App\Http\Controllers\SupportTicketWebController::class, 'step1Store'])->name('step1.store');
+
+    Route::get('branch', [\App\Http\Controllers\SupportTicketWebController::class, 'step2'])->name('step2');
+    Route::post('branch', [\App\Http\Controllers\SupportTicketWebController::class, 'step2Store'])->name('step2.store');
+
+    Route::get('details', [\App\Http\Controllers\SupportTicketWebController::class, 'step3'])->name('step3');
+    Route::post('details', [\App\Http\Controllers\SupportTicketWebController::class, 'step3Store'])->name('step3.store');
+
+    Route::get('review', [\App\Http\Controllers\SupportTicketWebController::class, 'review'])->name('review');
+    Route::post('submit', [\App\Http\Controllers\SupportTicketWebController::class, 'submit'])->name('submit');
+
+    Route::post('reset', [\App\Http\Controllers\SupportTicketWebController::class, 'reset'])->name('reset');
+});
+
 Route::get('authentication-failed', function () {
     $errors = [];
     array_push($errors, ['code' => 'auth-001', 'message' => 'Unauthenticated.']);

@@ -59,6 +59,22 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::post('submissions/{id}/reject', 'MissionSubmissionController@reject')->name('submissions.reject');
         });
 
+        // Support Tickets (global)
+        Route::group(['prefix' => 'support-ticket-types', 'as' => 'support-ticket-types.'], function () {
+            Route::get('/', 'SupportTicketTypeController@index')->name('index');
+            Route::get('create', 'SupportTicketTypeController@create')->name('create');
+            Route::post('/', 'SupportTicketTypeController@store')->name('store');
+            Route::get('{id}/edit', 'SupportTicketTypeController@edit')->name('edit');
+            Route::post('{id}', 'SupportTicketTypeController@update')->name('update');
+            Route::delete('{id}', 'SupportTicketTypeController@destroy')->name('destroy');
+        });
+
+        Route::group(['prefix' => 'support-tickets', 'as' => 'support-tickets.'], function () {
+            Route::get('/', 'SupportTicketController@index')->name('index');
+            Route::get('{id}', 'SupportTicketController@show')->name('show');
+            Route::post('{id}/status', 'SupportTicketController@updateStatus')->name('status');
+        });
+
         Route::get('maintenance-mode', 'SystemController@maintenance_mode')->name('maintenance-mode');
         Route::get('landing-page', 'SystemController@landing_page')->name('landing-page');
 

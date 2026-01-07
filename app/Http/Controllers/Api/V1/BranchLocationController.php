@@ -34,17 +34,25 @@ class BranchLocationController extends Controller
         $lng = (float) $request->input('longitude');
         $limit = (int) ($request->input('limit', 1));
 
+        $totalBranches = BranchLocation::query()->count();
+        if ($totalBranches === 0) {
+            return response()->json([
+                'user_location' => ['latitude' => $lat, 'longitude' => $lng],
+                'nearest' => null,
+                'branches' => [],
+                'branches_total' => 0,
+                'message' => 'No branches found. Run migrations and sync branch_locations in production.',
+            ], 200);
+        }
+
         // Haversine formula (km)
         $distanceSql = '(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))';
 
         $branches = BranchLocation::query()
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->select([
-                'branch_locations.*',
-                DB::raw($distanceSql . ' as distance_km'),
-            ])
-            ->addBinding([$lat, $lng, $lat], 'select')
+            ->select('branch_locations.*')
+            ->selectRaw($distanceSql . ' as distance_km', [$lat, $lng, $lat])
             ->orderBy('distance_km')
             ->limit($limit)
             ->get();
@@ -55,6 +63,7 @@ class BranchLocationController extends Controller
             'user_location' => ['latitude' => $lat, 'longitude' => $lng],
             'nearest' => $nearest,
             'branches' => $branches,
+            'branches_total' => $totalBranches,
         ]);
     }
 }
