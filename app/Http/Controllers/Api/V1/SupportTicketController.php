@@ -33,12 +33,19 @@ class SupportTicketController extends Controller
         ]);
     }
 
-    public function childTypes()
+    public function childTypes(Request $request)
     {
-        $children = SupportTicketType::query()
+        $parentId = $request->input('parent_id');
+        
+        $query = SupportTicketType::query()
             ->where('is_active', true)
-            ->whereNotNull('parent_id')
-            ->with('parent:id,name')
+            ->whereNotNull('parent_id');
+        
+        if ($parentId) {
+            $query->where('parent_id', $parentId);
+        }
+        
+        $children = $query->with('parent:id,name')
             ->orderBy('name')
             ->get(['id', 'parent_id', 'name']);
 
@@ -52,6 +59,36 @@ class SupportTicketController extends Controller
         });
 
         return response()->json([
+            'children' => $formatted,
+        ]);
+    }
+
+    public function childrenByParent($parentId)
+    {
+        $parent = SupportTicketType::query()
+            ->where('is_active', true)
+            ->whereNull('parent_id')
+            ->findOrFail($parentId);
+
+        $children = SupportTicketType::query()
+            ->where('is_active', true)
+            ->where('parent_id', $parentId)
+            ->orderBy('name')
+            ->get(['id', 'parent_id', 'name']);
+
+        $formatted = $children->map(function ($child) {
+            return [
+                'id' => $child->id,
+                'parent_id' => $child->parent_id,
+                'name' => $child->name,
+            ];
+        });
+
+        return response()->json([
+            'parent' => [
+                'id' => $parent->id,
+                'name' => $parent->name,
+            ],
             'children' => $formatted,
         ]);
     }

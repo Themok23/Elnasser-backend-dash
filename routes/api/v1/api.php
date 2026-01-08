@@ -398,6 +398,7 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
             Route::group(['prefix' => 'support-tickets'], function () {
                 // More specific routes FIRST (before 'types')
                 Route::get('types/parents', 'SupportTicketController@parentTypes');
+                Route::get('types/children/{parent_id}', 'SupportTicketController@childrenByParent');
                 Route::get('types/children', 'SupportTicketController@childTypes');
                 Route::get('types', 'SupportTicketController@types');
                 Route::post('/', 'SupportTicketController@store');

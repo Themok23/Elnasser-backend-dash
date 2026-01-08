@@ -80,6 +80,26 @@
           "response": []
         },
         {
+          "name": "2b. Get Children by Parent ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customer/support-tickets/types/children/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customer", "support-tickets", "types", "children", "1"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+            },
+            "description": "**Step 2b:** Get children ticket types for a specific parent.\n\nReplace `1` in the URL with the actual `parent_id` from Step 2.\n\nReturns the parent info and all its children."
+          },
+          "response": []
+        },
+        {
           "name": "3. Get Children Types",
           "request": {
             "method": "GET",
