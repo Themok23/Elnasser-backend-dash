@@ -62,6 +62,11 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
         // Support Tickets (global)
         Route::group(['prefix' => 'support-ticket-types', 'as' => 'support-ticket-types.'], function () {
             Route::get('/', 'SupportTicketTypeController@index')->name('index');
+            Route::get('create-parent', 'SupportTicketTypeController@createParent')->name('create-parent');
+            Route::post('store-parent', 'SupportTicketTypeController@storeParent')->name('store-parent');
+            Route::get('parent/{id}/edit', 'SupportTicketTypeController@editParent')->name('edit-parent');
+            Route::post('parent/{id}', 'SupportTicketTypeController@updateParent')->name('update-parent');
+            Route::delete('parent/{id}', 'SupportTicketTypeController@destroyParent')->name('destroy-parent');
             Route::get('create', 'SupportTicketTypeController@create')->name('create');
             Route::post('/', 'SupportTicketTypeController@store')->name('store');
             Route::get('{id}/edit', 'SupportTicketTypeController@edit')->name('edit');
@@ -72,6 +77,7 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
         Route::group(['prefix' => 'support-tickets', 'as' => 'support-tickets.'], function () {
             Route::get('/', 'SupportTicketController@index')->name('index');
             Route::get('{id}', 'SupportTicketController@show')->name('show');
+            Route::post('{id}/reply', 'SupportTicketController@reply')->name('reply');
             Route::post('{id}/status', 'SupportTicketController@updateStatus')->name('status');
         });
 

@@ -15,13 +15,20 @@
         </div>
 
         <div class="card p-4">
-            <form method="POST" action="{{ route('support-tickets.step3.store') }}">
+            <form method="POST" action="{{ route('support-tickets.step3.store') }}" enctype="multipart/form-data">
                 @csrf
 
                 <div class="mb-4">
                     <label class="form-label">Problem description</label>
                     <textarea name="problem" class="form-control form--control" rows="5" required placeholder="Write the problem you are facing">{{ old('problem', $draft['problem'] ?? '') }}</textarea>
                     @error('problem')<div class="text-danger mt-1">{{ $message }}</div>@enderror
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label">Attach Images (optional)</label>
+                    <input type="file" name="images[]" class="form-control form--control" multiple accept="image/*">
+                    <small class="form-text text-muted">You can select multiple images. Max 5MB per image.</small>
+                    @error('images.*')<div class="text-danger mt-1">{{ $message }}</div>@enderror
                 </div>
 
                 <div class="row g-4 mb-3">

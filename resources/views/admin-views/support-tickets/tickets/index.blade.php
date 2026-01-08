@@ -7,7 +7,7 @@
     <div class="d-flex align-items-center justify-content-between mb-3">
         <h2 class="page-header-title mb-0">Support Tickets</h2>
         <div class="d-flex gap-2">
-            <a href="{{ route('admin.support-ticket-types.index') }}" class="btn btn-outline-primary">Ticket Types</a>
+            <a href="{{ route('admin.support-ticket-types.index') }}" class="btn btn-outline-primary">Manage Types</a>
         </div>
     </div>
 
@@ -37,7 +37,6 @@
                             <th>ID</th>
                             <th>Ticket #</th>
                             <th>Type</th>
-                            <th>Inquiry</th>
                             <th>Branch</th>
                             <th>Status</th>
                             <th>Created</th>
@@ -50,7 +49,6 @@
                                 <td>{{ $ticket->id }}</td>
                                 <td>{{ $ticket->ticket_number }}</td>
                                 <td>{{ $ticket->type?->name }}</td>
-                                <td>{{ $ticket->inquiry_type }}</td>
                                 <td>{{ $ticket->branchLocation?->name ?? '-' }}</td>
                                 <td>
                                     <span class="badge badge-soft-info">{{ $statuses[$ticket->status] ?? $ticket->status }}</span>
@@ -61,7 +59,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="8" class="text-center">No tickets found</td></tr>
+                            <tr><td colspan="7" class="text-center">No tickets found</td></tr>
                         @endforelse
                     </tbody>
                 </table>

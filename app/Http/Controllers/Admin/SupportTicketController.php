@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\SupportTicketStatus;
 use App\Http\Controllers\Controller;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketMessage;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 
@@ -35,10 +36,49 @@ class SupportTicketController extends Controller
 
     public function show($id)
     {
-        $ticket = SupportTicket::with(['type', 'branchLocation', 'user'])->findOrFail($id);
+        $ticket = SupportTicket::with(['type', 'branchLocation', 'user.storage', 'messages'])->findOrFail($id);
         $statuses = SupportTicketStatus::labels();
 
         return view('admin-views.support-tickets.tickets.show', compact('ticket', 'statuses'));
+    }
+
+    public function reply(Request $request, $id)
+    {
+        $ticket = SupportTicket::findOrFail($id);
+
+        $data = $request->validate([
+            'message' => 'required|string|min:1|max:5000',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+        ]);
+
+        // Handle image uploads
+        $attachments = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imageName = \App\Traits\FileManagerTrait::upload('support-tickets/', 'webp', $image);
+                $disk = \App\Traits\FileManagerTrait::getDisk();
+                $url = $disk === 's3' 
+                    ? \Illuminate\Support\Facades\Storage::disk('s3')->url('support-tickets/' . $imageName)
+                    : asset('public/storage/support-tickets/' . $imageName);
+                $attachments[] = [
+                    'type' => 'image',
+                    'path' => 'support-tickets/' . $imageName,
+                    'url' => $url,
+                ];
+            }
+        }
+
+        SupportTicketMessage::query()->create([
+            'support_ticket_id' => $ticket->id,
+            'sender_type' => 'admin',
+            'sender_id' => auth('admin')->id(),
+            'message' => $data['message'],
+            'attachments' => !empty($attachments) ? $attachments : null,
+        ]);
+
+        Toastr::success('Reply sent');
+        return back();
     }
 
     public function updateStatus(Request $request, $id)

@@ -396,11 +396,15 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
 
             // Support Tickets
             Route::group(['prefix' => 'support-tickets'], function () {
+                // More specific routes FIRST (before 'types')
+                Route::get('types/parents', 'SupportTicketController@parentTypes');
+                Route::get('types/children', 'SupportTicketController@childTypes');
                 Route::get('types', 'SupportTicketController@types');
-                Route::get('inquiry-types', 'SupportTicketController@inquiryTypes');
                 Route::post('/', 'SupportTicketController@store');
                 Route::get('/', 'SupportTicketController@index');
                 Route::get('{id}', 'SupportTicketController@show');
+                Route::get('{id}/messages', 'SupportTicketController@messages');
+                Route::post('{id}/messages', 'SupportTicketController@sendMessage');
                 Route::post('status', 'SupportTicketController@statusByNumber');
             });
 

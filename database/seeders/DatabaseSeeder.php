@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,          // Users and customers with wallet/points
             OrderSeeder::class,         // Orders with order details
             PointsSeeder::class,       // Loyalty points, wallet, and order transactions
+            SupportTicketSeeder::class, // Support tickets + ticket types (demo data)
         ]);
     }
 }

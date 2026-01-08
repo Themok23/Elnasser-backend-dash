@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class SupportTicket extends Model
 {
@@ -11,7 +12,6 @@ class SupportTicket extends Model
         'ticket_number',
         'user_id',
         'support_ticket_type_id',
-        'inquiry_type',
         'branch_location_id',
         'problem',
         'contact_email',
@@ -49,6 +49,11 @@ class SupportTicket extends Model
     public function createdByAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'created_by_admin_id');
+    }
+
+    public function messages(): HasMany
+    {
+        return $this->hasMany(SupportTicketMessage::class, 'support_ticket_id')->orderBy('id');
     }
 }
 

@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\SupportTicketInquiryType;
 use App\Enums\SupportTicketStatus;
 use App\Models\BranchLocation;
 use App\Models\SupportTicket;
+use App\Models\SupportTicketMessage;
 use App\Models\SupportTicketType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -19,20 +19,19 @@ class SupportTicketWebController extends Controller
     {
         $types = SupportTicketType::query()
             ->where('is_active', true)
+            ->orderBy('parent_id')
             ->orderBy('name')
             ->get();
 
-        $inquiryTypes = SupportTicketInquiryType::labels();
         $draft = session()->get(self::SESSION_KEY, []);
 
-        return view('support-tickets.step-1', compact('types', 'inquiryTypes', 'draft'));
+        return view('support-tickets.step-1', compact('types', 'draft'));
     }
 
     public function step1Store(Request $request)
     {
         $data = $request->validate([
             'support_ticket_type_id' => 'required|integer|exists:support_ticket_types,id',
-            'inquiry_type' => 'required|string|in:' . implode(',', SupportTicketInquiryType::values()),
         ]);
 
         $type = SupportTicketType::query()
@@ -41,7 +40,6 @@ class SupportTicketWebController extends Controller
 
         $draft = session()->get(self::SESSION_KEY, []);
         $draft['support_ticket_type_id'] = $type->id;
-        $draft['inquiry_type'] = $data['inquiry_type'];
 
         session()->put(self::SESSION_KEY, $draft);
 
@@ -51,7 +49,7 @@ class SupportTicketWebController extends Controller
     public function step2(Request $request)
     {
         $draft = session()->get(self::SESSION_KEY, []);
-        if (!Arr::get($draft, 'support_ticket_type_id') || !Arr::get($draft, 'inquiry_type')) {
+        if (!Arr::get($draft, 'support_ticket_type_id')) {
             return redirect()->route('support-tickets.step1');
         }
 
@@ -69,7 +67,7 @@ class SupportTicketWebController extends Controller
     public function step2Store(Request $request)
     {
         $draft = session()->get(self::SESSION_KEY, []);
-        if (!Arr::get($draft, 'support_ticket_type_id') || !Arr::get($draft, 'inquiry_type')) {
+        if (!Arr::get($draft, 'support_ticket_type_id')) {
             return redirect()->route('support-tickets.step1');
         }
 
@@ -86,7 +84,7 @@ class SupportTicketWebController extends Controller
     public function step3()
     {
         $draft = session()->get(self::SESSION_KEY, []);
-        if (!Arr::get($draft, 'support_ticket_type_id') || !Arr::get($draft, 'inquiry_type') || !Arr::get($draft, 'branch_location_id')) {
+        if (!Arr::get($draft, 'support_ticket_type_id') || !Arr::get($draft, 'branch_location_id')) {
             return redirect()->route('support-tickets.step1');
         }
 
@@ -96,7 +94,7 @@ class SupportTicketWebController extends Controller
     public function step3Store(Request $request)
     {
         $draft = session()->get(self::SESSION_KEY, []);
-        if (!Arr::get($draft, 'support_ticket_type_id') || !Arr::get($draft, 'inquiry_type') || !Arr::get($draft, 'branch_location_id')) {
+        if (!Arr::get($draft, 'support_ticket_type_id') || !Arr::get($draft, 'branch_location_id')) {
             return redirect()->route('support-tickets.step1');
         }
 
@@ -107,11 +105,30 @@ class SupportTicketWebController extends Controller
             'callback_requested' => 'nullable|boolean',
             'callback_time' => 'nullable|date',
             'callback_notes' => 'nullable|string',
+            'images' => 'nullable|array',
+            'images.*' => 'image|mimes:jpeg,jpg,png,gif,webp|max:5120',
         ]);
 
         $data['callback_requested'] = (bool) ($request->input('callback_requested', 0));
         if ($data['callback_requested'] && empty($data['callback_time'])) {
             return back()->withErrors(['callback_time' => 'Callback time is required when callback is requested.'])->withInput();
+        }
+
+        // Handle image uploads temporarily
+        $uploadedImages = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $imageName = \App\Traits\FileManagerTrait::upload('support-tickets/', 'webp', $image);
+                $disk = \App\Traits\FileManagerTrait::getDisk();
+                $url = $disk === 's3' 
+                    ? \Illuminate\Support\Facades\Storage::disk('s3')->url('support-tickets/' . $imageName)
+                    : asset('public/storage/support-tickets/' . $imageName);
+                $uploadedImages[] = [
+                    'type' => 'image',
+                    'path' => 'support-tickets/' . $imageName,
+                    'url' => $url,
+                ];
+            }
         }
 
         $draft = array_merge($draft, [
@@ -121,6 +138,7 @@ class SupportTicketWebController extends Controller
             'callback_requested' => $data['callback_requested'],
             'callback_time' => $data['callback_time'] ?? null,
             'callback_notes' => $data['callback_notes'] ?? null,
+            'images' => $uploadedImages,
         ]);
 
         session()->put(self::SESSION_KEY, $draft);
@@ -131,7 +149,7 @@ class SupportTicketWebController extends Controller
     public function review()
     {
         $draft = session()->get(self::SESSION_KEY, []);
-        foreach (['support_ticket_type_id', 'inquiry_type', 'branch_location_id', 'problem', 'contact_email', 'contact_phone'] as $key) {
+        foreach (['support_ticket_type_id', 'branch_location_id', 'problem', 'contact_email', 'contact_phone'] as $key) {
             if (!Arr::get($draft, $key)) {
                 return redirect()->route('support-tickets.step1');
             }
@@ -139,15 +157,14 @@ class SupportTicketWebController extends Controller
 
         $type = SupportTicketType::find($draft['support_ticket_type_id']);
         $branch = BranchLocation::find($draft['branch_location_id']);
-        $inquiryTypes = SupportTicketInquiryType::labels();
 
-        return view('support-tickets.review', compact('draft', 'type', 'branch', 'inquiryTypes'));
+        return view('support-tickets.review', compact('draft', 'type', 'branch'));
     }
 
     public function submit(Request $request)
     {
         $draft = session()->get(self::SESSION_KEY, []);
-        foreach (['support_ticket_type_id', 'inquiry_type', 'branch_location_id', 'problem', 'contact_email', 'contact_phone'] as $key) {
+        foreach (['support_ticket_type_id', 'branch_location_id', 'problem', 'contact_email', 'contact_phone'] as $key) {
             if (!Arr::get($draft, $key)) {
                 return redirect()->route('support-tickets.step1');
             }
@@ -161,7 +178,6 @@ class SupportTicketWebController extends Controller
         $ticket->ticket_number = $this->generateTicketNumber();
         $ticket->user_id = null;
         $ticket->support_ticket_type_id = (int) $draft['support_ticket_type_id'];
-        $ticket->inquiry_type = (string) $draft['inquiry_type'];
         $ticket->branch_location_id = (int) $draft['branch_location_id'];
         $ticket->problem = (string) $draft['problem'];
         $ticket->contact_email = (string) $draft['contact_email'];
@@ -171,6 +187,14 @@ class SupportTicketWebController extends Controller
         $ticket->callback_notes = $draft['callback_notes'] ?? null;
         $ticket->status = SupportTicketStatus::OPEN;
         $ticket->save();
+
+        SupportTicketMessage::query()->create([
+            'support_ticket_id' => $ticket->id,
+            'sender_type' => 'customer',
+            'sender_id' => null,
+            'message' => (string) $draft['problem'],
+            'attachments' => !empty($draft['images']) ? $draft['images'] : null,
+        ]);
 
         session()->forget(self::SESSION_KEY);
 

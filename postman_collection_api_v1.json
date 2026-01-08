@@ -20,6 +20,16 @@
             "key": "csrf_token",
             "value": "",
             "type": "string"
+        },
+        {
+            "key": "ticket_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "ticket_number",
+            "value": "TKT-20260107-ABC123",
+            "type": "string"
         }
     ],
     "item": [
@@ -13521,6 +13531,346 @@
                         "description": "**Controller:** `App\\Http\\Controllers\\Api\\V1\\ConfigController@parcel_cancellation_reason`\n\n**Middleware:** `api, localization`"
                     },
                     "response": []
+                },
+                {
+                    "name": "Tickets",
+                    "item": [
+                        {
+                            "name": "Login (Customer) - sets auth_token",
+                            "event": [
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "var json = {};",
+                                            "try { json = pm.response.json(); } catch (e) {}",
+                                            "var token = json.token || json.access_token || (json.data && json.data.token);",
+                                            "if (token) {",
+                                            "  pm.collectionVariables.set('auth_token', token);",
+                                            "  pm.environment.set('auth_token', token);",
+                                            "}",
+                                            "pm.test('Token saved to auth_token', function () {",
+                                            "  pm.expect(pm.collectionVariables.get('auth_token') || pm.environment.get('auth_token')).to.not.be.empty;",
+                                            "});"
+                                        ]
+                                    }
+                                }
+                            ],
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\\"login_type\\\": \\\"manual\\\",\\n  \\\"email_or_phone\\\": \\\"01234567890\\\",\\n  \\\"password\\\": \\\"123456\\\",\\n  \\\"field_type\\\": \\\"phone\\\"\\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/auth/login",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "auth",
+                                        "login"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\Auth\\\\CustomerAuthController@login`\\n\\n**Middleware:** `api, localization`\\n\\n**Note:** Replace `email_or_phone` and `password` with a real user to get a token."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Ticket Types",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/support-tickets/types",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "support-tickets",
+                                        "types"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\SupportTicketController@types`\\n\\n**Middleware:** `api, localization, module-check, auth:api`",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{auth_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Inquiry Types",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/support-tickets/inquiry-types",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "support-tickets",
+                                        "inquiry-types"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\SupportTicketController@inquiryTypes`\\n\\n**Middleware:** `api, localization, module-check, auth:api`",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{auth_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Create Ticket",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\\"support_ticket_type_id\\\": 1,\\n  \\\"inquiry_type\\\": \\\"technical\\\",\\n  \\\"branch_location_id\\\": 1,\\n  \\\"problem\\\": \\\"The app crashes when I try to checkout at this branch.\\\",\\n  \\\"contact_email\\\": \\\"customer@example.com\\\",\\n  \\\"contact_phone\\\": \\\"+201234567890\\\",\\n  \\\"callback_requested\\\": true,\\n  \\\"callback_time\\\": \\\"2026-01-07 14:30:00\\\",\\n  \\\"callback_notes\\\": \\\"Please call after 2 PM.\\\"\\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/support-tickets",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "support-tickets"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\SupportTicketController@store`\\n\\n**Middleware:** `api, localization, module-check, auth:api`",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{auth_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "List My Tickets",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/support-tickets",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "support-tickets"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\SupportTicketController@index`\\n\\n**Middleware:** `api, localization, module-check, auth:api`",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{auth_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Ticket (by id)",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/support-tickets/{{ticket_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "support-tickets",
+                                        "{{ticket_id}}"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\SupportTicketController@show`\\n\\n**Middleware:** `api, localization, module-check, auth:api`",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{auth_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Ticket Status (by ticket_number)",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\\n  \\\"ticket_number\\\": \\\"{{ticket_number}}\\\"\\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                },
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/support-tickets/status",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "support-tickets",
+                                        "status"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\SupportTicketController@statusByNumber`\\n\\n**Middleware:** `api, localization, module-check, auth:api`",
+                                "auth": {
+                                    "type": "bearer",
+                                    "bearer": [
+                                        {
+                                            "key": "token",
+                                            "value": "{{auth_token}}",
+                                            "type": "string"
+                                        }
+                                    ]
+                                }
+                            },
+                            "response": []
+                        }
+                    ]
                 }
             ]
         }

@@ -18,7 +18,6 @@
             <div class="mb-3">
                 <h5 class="mb-2">Type</h5>
                 <div><strong>Reason:</strong> {{ $type?->name }}</div>
-                <div><strong>Inquiry:</strong> {{ $inquiryTypes[$draft['inquiry_type']] ?? $draft['inquiry_type'] }}</div>
             </div>
 
             <div class="mb-3">
@@ -43,6 +42,21 @@
                     {!! nl2br(e($draft['problem'])) !!}
                 </div>
             </div>
+
+            @if(!empty($draft['images']) && is_array($draft['images']) && count($draft['images']) > 0)
+                <div class="mb-4">
+                    <h5 class="mb-2">Attached Images</h5>
+                    <div class="d-flex flex-wrap gap-2">
+                        @foreach($draft['images'] as $attachment)
+                            @if(isset($attachment['type']) && $attachment['type'] === 'image' && isset($attachment['url']))
+                                <a href="{{ $attachment['url'] }}" target="_blank" class="d-inline-block">
+                                    <img src="{{ $attachment['url'] }}" alt="Attachment" style="max-width: 150px; max-height: 150px; border-radius: 4px; cursor: pointer;" class="img-thumbnail">
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+            @endif
 
             <form method="POST" action="{{ route('support-tickets.submit') }}">
                 @csrf
