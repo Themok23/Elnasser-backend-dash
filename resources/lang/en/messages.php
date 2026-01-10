@@ -8916,4 +8916,5 @@ Smartly or Earn. ',
   'cart_empty_warning' => 'Cart empty warning',
   'The source must be one of: mobile_app, pos, d365.' => 'The source must be one of: mobile app, pos, d365.',
   'The callback requested field must be true or false.' => 'The callback requested field must be true or false.',
+  'The proof image field is required.' => 'The proof image field is required.',
 );

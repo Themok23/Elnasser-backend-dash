@@ -1374,10 +1374,35 @@ class CustomerAuthController extends Controller
             $user->ref_code = Helpers::generate_referer_code();
         }
 
-        // Mark phone as verified since user is completing registration via phone
-        if ($user->is_phone_verified == 0) {
-            $user->is_phone_verified = 1;
-            $updatedFields[] = 'is_phone_verified';
+        // Handle phone verification (OTP) similarly to register:
+        // - If phone verification is enabled, DO NOT auto-verify phone. Send OTP instead (unless using Firebase OTP).
+        // - If phone verification is not enabled, auto-verify phone (as before).
+        $requiresPhoneVerification = false;
+        $otpSent = false;
+        $login_settings = array_column(
+            BusinessSetting::whereIn('key', ['phone_verification_status'])->get(['key', 'value'])->toArray(),
+            'value',
+            'key'
+        );
+        $firebase_otp_verification = BusinessSetting::where('key', 'firebase_otp_verification')->first()?->value ?? 0;
+
+        if (isset($login_settings['phone_verification_status']) && (int)$login_settings['phone_verification_status'] === 1) {
+            $requiresPhoneVerification = true;
+            if ((int)$user->is_phone_verified === 0) {
+                if (!$firebase_otp_verification) {
+                    $verification_check = $this->verification_check(['phone' => $user->phone]);
+                    if (is_array($verification_check)) {
+                        return response()->json(['errors' => $verification_check], 405);
+                    }
+                    $otpSent = true;
+                }
+            }
+        } else {
+            // If verification is not required, mark phone as verified automatically
+            if ((int)$user->is_phone_verified === 0) {
+                $user->is_phone_verified = 1;
+                $updatedFields[] = 'is_phone_verified';
+            }
         }
 
         $user->save();
@@ -1398,13 +1423,15 @@ class CustomerAuthController extends Controller
         }
 
         return response()->json([
-            'message' => translate('messages.registration_completed_successfully'),
+            'message' => $otpSent ? translate('messages.otp_sent_successfull') : translate('messages.registration_completed_successfully'),
             'user' => [
                 'id' => $user->id,
                 'name' => trim(($user->f_name ?? '') . ' ' . ($user->l_name ?? '')),
                 'phone' => $user->phone,
                 'email' => $user->email,
             ],
+            'requires_phone_verification' => $requiresPhoneVerification,
+            'otp_sent' => $otpSent,
             'is_complete' => $isNowComplete,
             'token' => $token,
             'updated_fields' => $updatedFields,

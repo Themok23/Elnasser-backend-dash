@@ -24,6 +24,22 @@ Content-Type: application/json
 
 **Note:** At least one optional field (`name`, `email`, or `password`) must be provided.
 
+### Phone OTP Verification (Important)
+If **phone verification is enabled** (`phone_verification_status = 1`) and the user’s phone is **not verified**, this endpoint will **send an OTP** to the phone number and will **NOT** auto-verify the phone.
+
+After receiving the OTP, verify it using:
+- **POST** `/api/v1/auth/verify-phone`
+
+Example verify request:
+```json
+{
+  "verification_type": "phone",
+  "login_type": "manual",
+  "phone": "+201234567890",
+  "otp": "123456"
+}
+```
+
 ### Example Request
 ```json
 {
@@ -48,6 +64,8 @@ Content-Type: application/json
     "phone": "+201234567890",
     "email": "ahmed@example.com"
   },
+  "requires_phone_verification": false,
+  "otp_sent": false,
   "is_complete": true,
   "token": "eyJ0eXAiOiJKV1QiLCJhbGc...",
   "updated_fields": ["f_name", "l_name", "email", "password"]
@@ -70,6 +88,8 @@ Content-Type: application/json
     "phone": "+201234567890",
     "email": null
   },
+  "requires_phone_verification": false,
+  "otp_sent": false,
   "is_complete": false,
   "token": null,
   "updated_fields": ["f_name", "l_name"]
@@ -77,6 +97,30 @@ Content-Type: application/json
 ```
 
 **Note:** User still needs to complete more fields. No token is returned.
+
+---
+
+### Success - OTP Sent (Phone Verification Required)
+**Status Code:** `200 OK`
+
+```json
+{
+  "message": "Otp sent successfull",
+  "user": {
+    "id": 2,
+    "name": "Ahmed Ali",
+    "phone": "+201234567890",
+    "email": "ahmed@example.com"
+  },
+  "requires_phone_verification": true,
+  "otp_sent": true,
+  "is_complete": false,
+  "token": null,
+  "updated_fields": ["password"]
+}
+```
+
+**Note:** Verify the OTP via `/api/v1/auth/verify-phone`. After verification, the user can login normally.
 
 ---
 
@@ -164,9 +208,13 @@ Content-Type: application/json
      "password": "Password123"
    }
    ↓
-5. Response: { "is_complete": true, "token": "..." }
+5. If phone verification is enabled and phone is not verified:
+   - Response: { "requires_phone_verification": true, "otp_sent": true, "is_complete": false, "token": null }
+   - Then POST /api/v1/auth/verify-phone with OTP
    ↓
-6. User is automatically logged in
+6. If user becomes complete:
+   - Response includes { "is_complete": true, "token": "..." }
+   - User is logged in
 ```
 
 ---
