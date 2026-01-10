@@ -62,20 +62,26 @@ class CustomerController extends Controller
 
 
         $customers = User::when(count($key) > 0, function ($query) use ($key) {
-            foreach ($key as $value) {
-                $query->orWhere('f_name', 'like', "%{$value}%")
-                    ->orWhere('l_name', 'like', "%{$value}%")
-                    ->orWhere('email', 'like', "%{$value}%")
-                    ->orWhere('phone', 'like', "%{$value}%");
-            };
-        })->withcount('orders')
+            $query->where(function ($q) use ($key) {
+                foreach ($key as $value) {
+                    $q->where(function ($subQuery) use ($value) {
+                        $subQuery->where('f_name', 'like', "%{$value}%")
+                            ->orWhere('l_name', 'like', "%{$value}%")
+                            ->orWhere('email', 'like', "%{$value}%")
+                            ->orWhere('phone', 'like', "%{$value}%");
+                    });
+                }
+            });
+        })
+        ->withCount('orders')
+        ->withSum('orders as total_order_amount', 'order_amount')
 
         ->when(isset($request->join_date) , function ($query) use($join_date_start, $join_date_end) {
-            $query->WhereBetween('created_at', [$join_date_start, $join_date_end]);
+            $query->whereBetween('created_at', [$join_date_start, $join_date_end]);
         })
         ->when(isset($request->order_date) , function ($query) use($order_date_start, $order_date_end) {
-            $query->wherehas('orders',function ($query) use($order_date_start, $order_date_end){
-                $query->WhereBetween('created_at', [$order_date_start, $order_date_end]);
+            $query->whereHas('orders',function ($query) use($order_date_start, $order_date_end){
+                $query->whereBetween('created_at', [$order_date_start, $order_date_end]);
             });
         })
 
@@ -103,33 +109,54 @@ class CustomerController extends Controller
         ->when(isset($order_wise) && $order_wise == 'oldest' , function ($query) {
             $query->oldest();
         })
-
         ->when(isset($order_wise) && $order_wise == 'order_amount', function ($query) {
-            $query->withSum('orders as total_order_amount', 'order_amount')
-                ->orderByDesc('total_order_amount');
+            $query->orderByDesc('total_order_amount');
         })
         ->when(!$order_wise, function ($query) {
             $query->orderBy('orders_count', 'desc');
         });
 
-
-        if(isset($show_limit) && $show_limit > 0 ){
-            $customers= $customers->take($show_limit)->get();
-            $perPage = config('default_pagination');
-            $page =  $request?->page ?? 1;
+        // Use database-level pagination for better performance with large datasets
+        $perPage = config('default_pagination', 25);
+        $page = $request->get('page', 1);
+        
+        // If show_limit is set, limit the query results first, then paginate efficiently
+        if(isset($show_limit) && $show_limit > 0 && is_numeric($show_limit)){
+            // Apply limit at database level to avoid loading all 250k+ records
+            // Get items for current page directly from database (efficient)
             $offset = ($page - 1) * $perPage;
-            $itemsForCurrentPage = $customers->slice($offset, $perPage);
+            
+            // Clone query to get items for current page with limit and offset
+            // Ensure offset doesn't exceed show_limit
+            if ($offset >= $show_limit) {
+                $items = collect([]);
+            } else {
+                // Calculate actual limit for current page (don't exceed show_limit)
+                $actualLimit = min($perPage, $show_limit - $offset);
+                $itemsQuery = clone $customers;
+                $items = $itemsQuery
+                    ->offset($offset)
+                    ->limit($actualLimit)
+                    ->get();
+            }
+            
+            // When show_limit is set, use it as total to avoid expensive COUNT queries
+            // on 250k+ records. This provides fast pagination while showing "first N results"
+            $totalCount = $show_limit;
+            
+            // Create paginator manually with limited total (using original perPage)
             $customers = new \Illuminate\Pagination\LengthAwarePaginator(
-                $itemsForCurrentPage,
-                $customers->count(),
+                $items,
+                $totalCount,
                 $perPage,
                 $page,
                 ['path' => Paginator::resolveCurrentPath(), 'query' => request()->query()]
             );
-
-
-        } else{
-            $customers=$customers->paginate(config('default_pagination'));
+        } else {
+            // Standard pagination without limit - uses database-level pagination
+            // Laravel will handle LIMIT/OFFSET efficiently at database level
+            // Note: This may still be slow on 250k+ records due to COUNT query
+            $customers = $customers->paginate($perPage);
         }
 
 

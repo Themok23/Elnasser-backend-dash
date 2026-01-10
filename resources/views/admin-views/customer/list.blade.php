@@ -199,7 +199,7 @@
                                     </td>
                                     <td>
                                         <label class="badge">
-                                            {{  \App\CentralLogics\Helpers::format_currency( $customer->orders()->sum('order_amount'))}}
+                                            {{  \App\CentralLogics\Helpers::format_currency( $customer->total_order_amount ?? 0)}}
                                         </label>
                                     </td>
                                     <td>
