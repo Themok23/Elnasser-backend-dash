@@ -3202,6 +3202,7 @@ class Helpers
             'upload_placeholder' => asset('/public/assets/admin/img/upload-placeholder.png'),
             'payment_modules/gateway_image' => asset('/public/assets/admin/img/payment/placeholder.png'),
             'email_template' => asset('/public/assets/admin/img/blank1.png'),
+            'story' => asset('public/assets/admin/img/900x400/img1.jpg'),
         ];
         try {
             if ($data && $type == 's3' && Storage::disk('s3')->exists($path . '/' . $data)) {

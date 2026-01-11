@@ -394,6 +394,13 @@ Route::group(['namespace' => 'Api\V1', 'middleware'=>'localization'], function (
                 Route::get('my-submissions', 'MissionController@mySubmissions');
             });
 
+            // Stories
+            Route::group(['prefix' => 'stories'], function () {
+                Route::get('/', 'StoryController@index');
+                Route::get('{id}', 'StoryController@show');
+                Route::post('{id}/view', 'StoryController@markAsViewed');
+            });
+
             // Support Tickets
             Route::group(['prefix' => 'support-tickets'], function () {
                 // More specific routes FIRST (before 'types')

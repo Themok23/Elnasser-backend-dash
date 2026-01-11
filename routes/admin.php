@@ -59,6 +59,17 @@ Route::group(['namespace' => 'Admin', 'as' => 'admin.'], function () {
             Route::post('submissions/{id}/reject', 'MissionSubmissionController@reject')->name('submissions.reject');
         });
 
+        // Stories
+        Route::group(['prefix' => 'stories', 'as' => 'stories.'], function () {
+            Route::get('/', 'StoryController@index')->name('index');
+            Route::get('create', 'StoryController@create')->name('create');
+            Route::post('store', 'StoryController@store')->name('store');
+            Route::get('{id}/edit', 'StoryController@edit')->name('edit');
+            Route::put('{id}', 'StoryController@update')->name('update');
+            Route::delete('{id}', 'StoryController@destroy')->name('destroy');
+            Route::get('{id}/toggle-status', 'StoryController@toggleStatus')->name('toggle-status');
+        });
+
         // Support Tickets (global)
         Route::group(['prefix' => 'support-ticket-types', 'as' => 'support-ticket-types.'], function () {
             Route::get('/', 'SupportTicketTypeController@index')->name('index');

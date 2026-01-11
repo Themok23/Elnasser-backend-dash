@@ -78,6 +78,14 @@
                         </ul>
                     </li>
 
+                    <!-- Stories -->
+                    <li class="navbar-vertical-aside-has-menu {{ Request::is('admin/stories*') ? 'active' : '' }}">
+                        <a class="js-navbar-vertical-aside-menu-link nav-link" href="{{ route('admin.stories.index') }}" title="{{ translate('messages.stories') }}">
+                            <i class="tio-photo nav-icon"></i>
+                            <span class="text-truncate">{{ translate('messages.stories') }}</span>
+                        </a>
+                    </li>
+
                     <!-- Support Tickets -->
                     <li class="navbar-vertical-aside-has-menu {{ (Request::is('admin/support-tickets*') || Request::is('admin/support-ticket-types*')) ? 'active' : '' }}">
                         <a class="js-navbar-vertical-aside-menu-link nav-link nav-link-toggle" href="javascript:" title="Support Tickets">
