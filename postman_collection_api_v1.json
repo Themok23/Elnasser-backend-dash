@@ -30,6 +30,11 @@
             "key": "ticket_number",
             "value": "TKT-20260107-ABC123",
             "type": "string"
+        },
+        {
+            "key": "story_id",
+            "value": "1",
+            "type": "string"
         }
     ],
     "item": [
@@ -13867,6 +13872,110 @@
                                         }
                                     ]
                                 }
+                            },
+                            "response": []
+                        }
+                    ]
+                },
+                {
+                    "name": "Stories",
+                    "item": [
+                        {
+                            "name": "Get All Stories",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/stories",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "stories"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\StoryController@index`\\n\\n**Middleware:** `api, localization, module-check, auth:api`\\n\\n**Response:** Returns all active stories with `is_viewed` status for the authenticated user."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Get Single Story",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/stories/{{story_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "stories",
+                                        "{{story_id}}"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\StoryController@show`\\n\\n**Middleware:** `api, localization, module-check, auth:api`\\n\\n**Parameters:**\\n- `id` (path) - Story ID\\n\\n**Response:** Returns single story with `is_viewed` status."
+                            },
+                            "response": []
+                        },
+                        {
+                            "name": "Mark Story as Viewed",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json",
+                                        "type": "text"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/api/v1/customer/stories/{{story_id}}/view",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "api",
+                                        "v1",
+                                        "customer",
+                                        "stories",
+                                        "{{story_id}}",
+                                        "view"
+                                    ]
+                                },
+                                "description": "**Controller:** `App\\\\Http\\\\Controllers\\\\Api\\\\V1\\\\StoryController@markAsViewed`\\n\\n**Middleware:** `api, localization, module-check, auth:api`\\n\\n**Parameters:**\\n- `id` (path) - Story ID\\n\\n**Response:** Marks the story as viewed for the authenticated user."
                             },
                             "response": []
                         }

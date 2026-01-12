@@ -1,0 +1,169 @@
+{
+  "info": {
+    "name": "Elnasser Backend API V1 - Stories",
+    "description": "Complete stories feature testing collection with auto-saved variables (auth_token, story_id).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "stories-v1"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000", "type": "string" },
+    { "key": "auth_token", "value": "", "type": "string" },
+    { "key": "story_id", "value": "1", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Stories - Complete Workflow",
+      "item": [
+        {
+          "name": "1. Login (Customer) - Auto-saves auth_token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = {};",
+                  "try { json = pm.response.json(); } catch (e) {}",
+                  "var token = json.token || json.access_token || (json.data && json.data.token);",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('auth_token', token);",
+                  "  pm.environment.set('auth_token', token);",
+                  "  console.log('Token saved:', token);",
+                  "}",
+                  "pm.test('Token saved to auth_token', function () {",
+                  "  pm.expect(pm.collectionVariables.get('auth_token') || pm.environment.get('auth_token')).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login_type\": \"manual\",\n  \"email_or_phone\": \"01234567890\",\n  \"password\": \"123456\",\n  \"field_type\": \"phone\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            },
+            "description": "**Step 1:** Login to get authentication token.\n\nReplace `email_or_phone` and `password` with valid user credentials.\n\nToken is automatically saved to `auth_token` variable."
+          },
+          "response": []
+        },
+        {
+          "name": "2. Get All Stories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var json = pm.response.json();",
+                  "  if (json.stories && json.stories.length > 0) {",
+                  "    var firstStoryId = json.stories[0].id;",
+                  "    if (firstStoryId) {",
+                  "      pm.collectionVariables.set('story_id', firstStoryId);",
+                  "      pm.environment.set('story_id', firstStoryId);",
+                  "      console.log('Story ID saved:', firstStoryId);",
+                  "    }",
+                  "  }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customer/stories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customer", "stories"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+            },
+            "description": "**Step 2:** Get all active stories with view status.\n\n**Response includes:**\n- `stories`: Array of story objects\n- `total`: Total count of stories\n\n**Each story contains:**\n- `id`: Story ID\n- `title`: Story title (optional)\n- `type`: 'image' or 'video'\n- `media_url`: Full URL to the media file\n- `description`: Story description (optional)\n- `is_active`: Active status\n- `expires_at`: Expiry date (optional)\n- `created_at`: Creation timestamp\n- `is_viewed`: Boolean indicating if user has viewed this story\n\n**Auto-saves:** First story ID to `story_id` variable."
+          },
+          "response": []
+        },
+        {
+          "name": "3. Get Single Story",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customer/stories/{{story_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customer", "stories", "{{story_id}}"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+            },
+            "description": "**Step 3:** Get details of a single story.\n\n**Parameters:**\n- `id` (path): Story ID - Uses `{{story_id}}` variable (auto-saved from step 2)\n\n**Response includes:**\n- Full story details\n- `is_viewed`: Boolean indicating if user has viewed this story\n\n**Note:** Update `{{story_id}}` variable if you want to view a different story."
+          },
+          "response": []
+        },
+        {
+          "name": "4. Mark Story as Viewed",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customer/stories/{{story_id}}/view",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customer", "stories", "{{story_id}}", "view"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+            },
+            "description": "**Step 4:** Mark a story as viewed by the authenticated user.\n\n**Parameters:**\n- `id` (path): Story ID - Uses `{{story_id}}` variable\n\n**Response:**\n- `message`: Success message\n- `story_id`: The story ID that was marked as viewed\n\n**Note:**\n- If the story is already viewed, the request still succeeds (idempotent)\n- After marking as viewed, the `is_viewed` field will be `true` in subsequent requests\n- Use this endpoint when a user views a story in the mobile app"
+          },
+          "response": []
+        },
+        {
+          "name": "5. Verify Story View Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json", "type": "text" },
+              { "key": "Content-Type", "value": "application/json", "type": "text" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/customer/stories/{{story_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "customer", "stories", "{{story_id}}"]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{auth_token}}", "type": "string" }]
+            },
+            "description": "**Step 5:** Verify that the story is now marked as viewed.\n\nAfter running step 4, run this request again to confirm that `is_viewed` is now `true`.\n\n**Expected result:**\n- `is_viewed`: `true`\n\n**Workflow:**\n1. Get all stories (step 2) - check `is_viewed: false`\n2. Mark story as viewed (step 4)\n3. Get story again (step 5) - verify `is_viewed: true`"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
+

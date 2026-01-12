@@ -453,7 +453,7 @@ class CustomerAuthController extends Controller
         // Auto-verify phone/email if user has password, name, and email/phone
         // This handles cases where users have complete data but verification flags weren't set
         $needsAutoVerify = false;
-        if (!empty($user->password) && !empty($user->f_name) && !empty($user->l_name)) {
+        if (!empty($user->password) && !empty($user->f_name)) {
             if (!empty($user->email) && $user->is_email_verified == 0) {
                 $user->is_email_verified = 1;
                 $needsAutoVerify = true;
@@ -470,7 +470,6 @@ class CustomerAuthController extends Controller
         // User exists - check if complete or incomplete
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
-                     !empty($user->l_name) &&
                      ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
 
         if ($isComplete) {
@@ -507,7 +506,7 @@ class CustomerAuthController extends Controller
     {
         // Determine if password is required based on source
         $isPosOrD365 = in_array($request->source, ['pos', 'd365']);
-        $passwordRules = $isPosOrD365 
+        $passwordRules = $isPosOrD365
             ? ['nullable', Password::min(8)]  // Optional for POS/D365
             : ['required', Password::min(8)]; // Required for mobile app
 
@@ -533,7 +532,7 @@ class CustomerAuthController extends Controller
                 $name = $request->name;
                 $nameParts = explode(' ', $name, 2);
                 $firstName = $nameParts[0];
-                $lastName = $nameParts[1] ?? '';
+                $lastName = $nameParts[1] ?? null;
 
                 //Save point to refeer
                 if ($request->ref_code) {
@@ -574,7 +573,7 @@ class CustomerAuthController extends Controller
 
                 // Determine if this is a POS/D365 registration
                 $isPosOrD365 = in_array($request->source, ['pos', 'd365']);
-                
+
                 // Create user within transaction
                 $user = User::create([
                     'f_name' => $firstName,
@@ -739,16 +738,16 @@ class CustomerAuthController extends Controller
 
                 // If we reach here, everything succeeded - transaction will commit
                 return response()->json([
-                    'token' => $token, 
-                    'is_phone_verified' => $phone, 
-                    'is_email_verified' => $mail, 
-                    'is_personal_info' => $isPersonalInfo ? 1 : 0, 
-                    'is_exist_user' => null, 
-                    'login_type' => 'manual', 
+                    'token' => $token,
+                    'is_phone_verified' => $phone,
+                    'is_email_verified' => $mail,
+                    'is_personal_info' => $isPersonalInfo ? 1 : 0,
+                    'is_exist_user' => null,
+                    'login_type' => 'manual',
                     'email' => $user_email,
                     'is_complete' => $isComplete,
-                    'message' => $isComplete 
-                        ? translate('messages.registration_successful') 
+                    'message' => $isComplete
+                        ? translate('messages.registration_successful')
                         : 'Registration successful. Customer can complete registration later via mobile app.'
                 ], 200);
             });
@@ -1325,7 +1324,6 @@ class CustomerAuthController extends Controller
         // Check if user is already complete
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
-                     !empty($user->l_name) &&
                      ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
 
         if ($isComplete) {
@@ -1340,12 +1338,16 @@ class CustomerAuthController extends Controller
         // Update name if provided and missing
         if ($request->has('name') && $request->name) {
             $nameParts = explode(' ', $request->name, 2);
+
+            // Update first name if missing
             if (empty($user->f_name)) {
                 $user->f_name = $nameParts[0];
                 $updatedFields[] = 'f_name';
             }
-            if (empty($user->l_name) && isset($nameParts[1])) {
-                $user->l_name = $nameParts[1];
+
+            // Update last name if missing
+            if (empty($user->l_name)) {
+                $user->l_name = isset($nameParts[1]) ? $nameParts[1] : null;
                 $updatedFields[] = 'l_name';
             }
         }
@@ -1410,7 +1412,6 @@ class CustomerAuthController extends Controller
         // Check if user is now complete after update
         $isNowComplete = !empty($user->password) &&
                         !empty($user->f_name) &&
-                        !empty($user->l_name) &&
                         ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
 
         // Generate token if user is now complete
