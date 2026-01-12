@@ -468,10 +468,10 @@ class CustomerAuthController extends Controller
         }
 
         // User exists - check if complete or incomplete
-        // User is complete if they have password, first name, and phone/email verification
+        // User is complete if they have password, first name, and phone verification (email verification not required)
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
-                     ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
+                     $user->is_phone_verified == 1;
 
         if ($isComplete) {
             // User is complete - they can login normally
@@ -990,7 +990,7 @@ class CustomerAuthController extends Controller
             }
             $user = auth()->user();
 
-            // Check if phone verification is required and user hasn't verified phone
+            // Check if phone verification is required - user must verify phone before login
             $login_settings = array_column(
                 BusinessSetting::whereIn('key', ['phone_verification_status'])->get(['key', 'value'])->toArray(),
                 'value',
@@ -998,8 +998,8 @@ class CustomerAuthController extends Controller
             );
 
             if (isset($login_settings['phone_verification_status']) && (int)$login_settings['phone_verification_status'] === 1) {
-                if ($request_data['field_type'] == 'phone' && (int)$user->is_phone_verified === 0) {
-                    // User is logging in with phone but phone is not verified
+                if ((int)$user->is_phone_verified === 0) {
+                    // Phone verification is required but user's phone is not verified
                     $errors = [];
                     array_push($errors, ['code' => 'phone_verification_required', 'message' => 'Please verify your phone number to login']);
                     return response()->json([
@@ -1341,10 +1341,10 @@ class CustomerAuthController extends Controller
         }
 
         // Check if user is already complete
-        // User is complete if they have password, first name, and phone/email verification
+        // User is complete if they have password, first name, and phone verification (email verification not required)
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
-                     ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
+                     $user->is_phone_verified == 1;
 
         if ($isComplete) {
             return response()->json([
@@ -1430,10 +1430,10 @@ class CustomerAuthController extends Controller
         $user->save();
 
         // Check if user is now complete after update
-        // User is complete if they have password, first name, and phone/email verification
+        // User is complete if they have password, first name, and phone verification (email verification not required)
         $isNowComplete = !empty($user->password) &&
                         !empty($user->f_name) &&
-                        ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
+                        $user->is_phone_verified == 1;
 
         // Generate token if user is now complete
         $token = null;
