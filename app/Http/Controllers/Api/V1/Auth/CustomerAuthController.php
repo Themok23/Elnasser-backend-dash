@@ -468,6 +468,7 @@ class CustomerAuthController extends Controller
         }
 
         // User exists - check if complete or incomplete
+        // User is complete if they have password, first name, and phone/email verification
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
                      ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
@@ -989,6 +990,24 @@ class CustomerAuthController extends Controller
             }
             $user = auth()->user();
 
+            // Check if phone verification is required and user hasn't verified phone
+            $login_settings = array_column(
+                BusinessSetting::whereIn('key', ['phone_verification_status'])->get(['key', 'value'])->toArray(),
+                'value',
+                'key'
+            );
+
+            if (isset($login_settings['phone_verification_status']) && (int)$login_settings['phone_verification_status'] === 1) {
+                if ($request_data['field_type'] == 'phone' && (int)$user->is_phone_verified === 0) {
+                    // User is logging in with phone but phone is not verified
+                    $errors = [];
+                    array_push($errors, ['code' => 'phone_verification_required', 'message' => 'Please verify your phone number to login']);
+                    return response()->json([
+                        'errors' => $errors
+                    ], 403);
+                }
+            }
+
             $this->refer_code_check($user);
 
             $is_personal_info = 0;
@@ -1011,7 +1030,7 @@ class CustomerAuthController extends Controller
                 }
             }
 
-            return response()->json(['token' => $token, 'is_phone_verified'=> 1, 'is_email_verified'=> 1, 'is_personal_info' => $is_personal_info, 'is_exist_user' => null, 'login_type' => 'manual', 'email' => $user_email], 200);
+            return response()->json(['token' => $token, 'is_phone_verified'=> $user->is_phone_verified, 'is_email_verified'=> $user->is_email_verified, 'is_personal_info' => $is_personal_info, 'is_exist_user' => null, 'login_type' => 'manual', 'email' => $user_email], 200);
         } else {
             $errors = [];
             array_push($errors, ['code' => 'auth-001', 'message' => translate('User_credential_does_not_match')]);
@@ -1322,6 +1341,7 @@ class CustomerAuthController extends Controller
         }
 
         // Check if user is already complete
+        // User is complete if they have password, first name, and phone/email verification
         $isComplete = !empty($user->password) &&
                      !empty($user->f_name) &&
                      ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
@@ -1410,6 +1430,7 @@ class CustomerAuthController extends Controller
         $user->save();
 
         // Check if user is now complete after update
+        // User is complete if they have password, first name, and phone/email verification
         $isNowComplete = !empty($user->password) &&
                         !empty($user->f_name) &&
                         ($user->is_phone_verified == 1 || $user->is_email_verified == 1);
